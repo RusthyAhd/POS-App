@@ -1,4 +1,3 @@
-import 'product.dart';
 import 'customer.dart';
 import 'billing_item.dart';
 

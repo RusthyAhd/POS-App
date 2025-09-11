@@ -289,13 +289,13 @@ class _HomeScreenState extends State<HomeScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Pegas Flex',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
+          style: Theme.of(context).appBarTheme.titleTextStyle,
         ),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
+        iconTheme: Theme.of(context).appBarTheme.iconTheme,
         elevation: 0,
       ),
       drawer: const SlidingMenu(),
@@ -1335,7 +1335,10 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               );
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Delete', style: TextStyle(color: Colors.white)),
           ),
         ],

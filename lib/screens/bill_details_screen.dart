@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/billing_item.dart';
 import '../models/customer.dart';
 import '../utils/theme_helpers.dart';
@@ -22,27 +23,44 @@ class BillDetailsScreen extends StatefulWidget {
 }
 
 class _BillDetailsScreenState extends State<BillDetailsScreen> {
-  double discountPercentage = 0.0;
   double discountAmount = 0.0;
   Customer? selectedCustomer;
+  final TextEditingController _discountController = TextEditingController();
 
-  double get finalAmount {
-    return (widget.billingItems.fold(0.0, (sum, item) => sum + (item.price * item.quantity))) - discountAmount;
+  double get subtotalAmount {
+    return widget.billingItems.fold(0.0, (sum, item) => sum + (item.price * item.quantity));
   }
 
-  void _calculateDiscount() {
-    if (discountPercentage > 0) {
-      discountAmount = (widget.billingItems.fold(0.0, (sum, item) => sum + (item.price * item.quantity)) * discountPercentage / 100);
-    } else {
-      discountAmount = 0.0;
+  double get finalAmount {
+    return subtotalAmount - discountAmount;
+  }
+
+  double get discountPercentage {
+    if (subtotalAmount > 0) {
+      return (discountAmount / subtotalAmount) * 100;
     }
-    setState(() {});
+    return 0.0;
+  }
+
+  void _applyDiscount(String value) {
+    setState(() {
+      double enteredAmount = double.tryParse(value) ?? 0.0;
+      // Ensure discount doesn't exceed subtotal
+      if (enteredAmount <= subtotalAmount) {
+        discountAmount = enteredAmount;
+      } else {
+        discountAmount = subtotalAmount;
+        _discountController.text = subtotalAmount.toStringAsFixed(2);
+      }
+    });
   }
 
   @override
   void initState() {
     super.initState();
     selectedCustomer = widget.customer;
+    // Initialize discount controller with "0"
+    _discountController.text = "0";
   }
 
   @override
@@ -51,9 +69,11 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
       appBar: AppBar(
         title: Text(
           'Bill Details - ${widget.billNumber}',
-          style: TextStyle(color: ThemeHelpers.getHeadingColor(context)),
+          style: Theme.of(context).appBarTheme.titleTextStyle,
         ),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
+        iconTheme: Theme.of(context).appBarTheme.iconTheme,
         elevation: 0,
         actions: [
           IconButton(
@@ -138,8 +158,9 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
                             onPressed: () {
                               showDialog(
                                 context: context,
-                                builder: (dialogContext) => AddCustomerDialog(
-                                  onCustomerAdded: (customer) {
+                                barrierDismissible: true,
+                                builder: (dialogContext) => CustomerSelectionDialog(
+                                  onCustomerSelected: (customer) {
                                     setState(() {
                                       selectedCustomer = customer;
                                     });
@@ -151,9 +172,9 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
                               );
                             },
                             icon: const Icon(Icons.person_add),
-                            label: Text(
+                            label: const Text(
                               'Add Customer',
-                              style: TextStyle(color: ThemeHelpers.getPrimaryTextColor(context)),
+                              style: TextStyle(color: Colors.white),
                             ),
                           ),
                         ],
@@ -257,50 +278,179 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Discount:',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: ThemeHelpers.getHeadingColor(context),
-                      ),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.local_offer,
+                          color: Theme.of(context).primaryColor,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Apply Discount',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: ThemeHelpers.getHeadingColor(context),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
+                    
+                    // Subtotal display
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Subtotal:',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: ThemeHelpers.getSecondaryGreyColor(context),
+                            ),
+                          ),
+                          Text(
+                            'LKR ${subtotalAmount.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: ThemeHelpers.getPrimaryTextColor(context),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    
                     Row(
                       children: [
                         Expanded(
+                          flex: 2,
                           child: TextField(
-                            decoration: const InputDecoration(
-                              labelText: 'Discount %',
-                              border: OutlineInputBorder(),
+                            controller: _discountController,
+                            decoration: InputDecoration(
+                              labelText: 'Discount Amount (LKR)',
+                              prefixIcon: Icon(
+                                Icons.money_off,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                              border: const OutlineInputBorder(),
+                              hintText: '0.00',
+                              helperText: 'Tap to edit discount amount',
                             ),
-                            keyboardType: TextInputType.number,
-                            onChanged: (value) {
-                              setState(() {
-                                discountPercentage = double.tryParse(value) ?? 0.0;
-                                _calculateDiscount();
-                              });
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            onChanged: _applyDiscount,
+                            onTap: () {
+                              // Auto-select all text when tapped
+                              _discountController.selection = TextSelection(
+                                baseOffset: 0,
+                                extentOffset: _discountController.text.length,
+                              );
                             },
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: ThemeHelpers.getPrimaryTextColor(context),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 16),
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            'LKR ${discountAmount.toStringAsFixed(2)}',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).primaryColor,
+                        Expanded(
+                          flex: 1,
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Theme.of(context).primaryColor.withOpacity(0.1),
+                                  Theme.of(context).primaryColor.withOpacity(0.05),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Theme.of(context).primaryColor.withOpacity(0.3),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Percentage',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: ThemeHelpers.getSecondaryGreyColor(context),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${discountPercentage.toStringAsFixed(1)}%',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
                       ],
                     ),
+                    
+                    if (discountAmount > 0) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.green.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              color: Colors.green,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Discount of LKR ${discountAmount.toStringAsFixed(2)} applied (${discountPercentage.toStringAsFixed(1)}%)',
+                                style: TextStyle(
+                                  color: Colors.green.shade700,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  discountAmount = 0.0;
+                                  _discountController.clear();
+                                });
+                              },
+                              child: Text(
+                                'Clear',
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -350,9 +500,9 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () => _showPrintDialog(),
                     icon: const Icon(Icons.print),
-                    label: Text(
+                    label: const Text(
                       'Print Bill',
-                      style: TextStyle(color: ThemeHelpers.getPrimaryTextColor(context)),
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
                 ),
@@ -361,9 +511,9 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
                   child: OutlinedButton.icon(
                     onPressed: () => _showBillPreview(),
                     icon: const Icon(Icons.preview),
-                    label: Text(
+                    label: const Text(
                       'Preview',
-                      style: TextStyle(color: ThemeHelpers.getPrimaryTextColor(context)),
+                      style: TextStyle(color: Colors.black),
                     ),
                   ),
                 ),
@@ -491,14 +641,21 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
                   children: [
                     Text(
                       'Discount (${discountPercentage.toStringAsFixed(1)}%):',
-                      style: TextStyle(color: ThemeHelpers.getSecondaryGreyColor(dialogContext)),
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     Text(
                       '-LKR ${discountAmount.toStringAsFixed(2)}',
-                      style: TextStyle(color: ThemeHelpers.getSecondaryGreyColor(dialogContext)),
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 8),
               ],
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -553,18 +710,26 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.bluetooth_rounded, size: 48),
+            Icon(
+              Icons.bluetooth_rounded, 
+              size: 48,
+              color: Theme.of(dialogContext).primaryColor,
+            ),
             SizedBox(height: 16),
             Text(
               'Connecting to thermal printer...',
-              style: TextStyle(color: ThemeHelpers.getPrimaryTextColor(dialogContext)),
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             SizedBox(height: 16),
             Text(
               'Make sure your thermal printer is turned on and paired.',
               style: TextStyle(
-                fontSize: 12,
-                color: ThemeHelpers.getSecondaryGreyColor(dialogContext),
+                fontSize: 14,
+                color: Colors.black,
               ),
             ),
           ],
@@ -574,7 +739,10 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
             onPressed: () => Navigator.pop(dialogContext),
             child: Text(
               'Cancel',
-              style: TextStyle(color: ThemeHelpers.getSecondaryGreyColor(dialogContext)),
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 16,
+              ),
             ),
           ),
           ElevatedButton(
@@ -597,13 +765,93 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
     );
   }
 
-  void _shareBill(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Bill sharing feature coming soon!'),
-        backgroundColor: Colors.blue,
-      ),
-    );
+  void _shareBill(BuildContext context) async {
+    // Create bill text for sharing
+    final billText = _generateBillText();
+    
+    // WhatsApp URL scheme
+    final whatsappUrl = 'whatsapp://send?text=${Uri.encodeComponent(billText)}';
+    final whatsappWebUrl = 'https://web.whatsapp.com/send?text=${Uri.encodeComponent(billText)}';
+    
+    try {
+      // Try to launch WhatsApp app first
+      if (await canLaunchUrl(Uri.parse(whatsappUrl))) {
+        await launchUrl(Uri.parse(whatsappUrl));
+      } else if (await canLaunchUrl(Uri.parse(whatsappWebUrl))) {
+        // Fallback to WhatsApp Web
+        await launchUrl(Uri.parse(whatsappWebUrl), mode: LaunchMode.externalApplication);
+      } else {
+        // If WhatsApp is not available, show error
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('WhatsApp is not installed on this device'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to share bill'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+  
+  String _generateBillText() {
+    final buffer = StringBuffer();
+    
+    // Header
+    buffer.writeln('🧾 *PEGAS FLEX - BILL RECEIPT*');
+    buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    buffer.writeln('📄 Bill No: ${widget.billNumber}');
+    buffer.writeln('📅 Date: ${DateTime.now().toString().split(' ')[0]}');
+    buffer.writeln('🕐 Time: ${DateTime.now().toString().split(' ')[1].substring(0, 8)}');
+    
+    // Customer info
+    if (selectedCustomer != null) {
+      buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      buffer.writeln('👤 *CUSTOMER DETAILS*');
+      buffer.writeln('Name: ${selectedCustomer!.name}');
+      if (selectedCustomer!.phone.isNotEmpty) {
+        buffer.writeln('Phone: ${selectedCustomer!.phone}');
+      }
+      if (selectedCustomer!.email.isNotEmpty) {
+        buffer.writeln('Email: ${selectedCustomer!.email}');
+      }
+    }
+    
+    buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    buffer.writeln('🛒 *ITEMS*');
+    
+    // Items
+    for (int i = 0; i < widget.billingItems.length; i++) {
+      final item = widget.billingItems[i];
+      buffer.writeln('${i + 1}. ${item.name}');
+      buffer.writeln('   Qty: ${item.quantity} × Rs.${item.price.toStringAsFixed(2)}');
+      buffer.writeln('   Total: Rs.${item.totalPrice.toStringAsFixed(2)}');
+      buffer.writeln('');
+    }
+    
+    // Totals
+    buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    buffer.writeln('💰 *BILL SUMMARY*');
+    buffer.writeln('Subtotal: Rs.${subtotalAmount.toStringAsFixed(2)}');
+    if (discountAmount > 0) {
+      buffer.writeln('Discount: Rs.${discountAmount.toStringAsFixed(2)}');
+    }
+    buffer.writeln('*Final Amount: Rs.${finalAmount.toStringAsFixed(2)}*');
+    buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    buffer.writeln('');
+    buffer.writeln('Thank you for your business! 🙏');
+    buffer.writeln('*Pegas Flex POS System*');
+    
+    return buffer.toString();
   }
 
   void _saveBill() {
@@ -615,107 +863,840 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
     );
     Navigator.pop(context);
   }
+
+  @override
+  void dispose() {
+    _discountController.dispose();
+    super.dispose();
+  }
 }
 
-class AddCustomerDialog extends StatefulWidget {
-  final Function(Customer) onCustomerAdded;
+class CustomerSelectionDialog extends StatefulWidget {
+  final Function(Customer) onCustomerSelected;
 
-  const AddCustomerDialog({
+  const CustomerSelectionDialog({
     super.key,
-    required this.onCustomerAdded,
+    required this.onCustomerSelected,
   });
 
   @override
-  State<AddCustomerDialog> createState() => _AddCustomerDialogState();
+  State<CustomerSelectionDialog> createState() => _CustomerSelectionDialogState();
 }
 
-class _AddCustomerDialogState extends State<AddCustomerDialog> {
+class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> 
+    with TickerProviderStateMixin {
+  late TabController _tabController;
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  late Animation<Offset> _slideAnimation;
+  
+  final TextEditingController _searchController = TextEditingController();
+  List<Customer> _customers = [];
+  List<Customer> _filteredCustomers = [];
+  bool _isLoading = true;
+
+  // New customer form controllers
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
+  final _addressController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    
+    _scaleAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.elasticOut,
+    );
+    
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _loadCustomers();
+    _animationController.forward();
+    
+    _searchController.addListener(_filterCustomers);
+  }
+
+  void _loadCustomers() {
+    // Simulate loading customers from database
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _customers = _generateSampleCustomers();
+          _filteredCustomers = _customers;
+          _isLoading = false;
+        });
+      }
+    });
+  }
+
+  List<Customer> _generateSampleCustomers() {
+    return [
+      Customer(
+        id: 'CUST001',
+        name: 'John Smith',
+        phone: '+94 771234567',
+        email: 'john.smith@email.com',
+        address: '123 Main Street, Colombo',
+        city: 'Colombo',
+        customerType: 'premium',
+        totalPurchases: 15000.0,
+        totalOrders: 25,
+      ),
+      Customer(
+        id: 'CUST002',
+        name: 'Sarah Johnson',
+        phone: '+94 777654321',
+        email: 'sarah.j@gmail.com',
+        address: '456 Oak Avenue, Kandy',
+        city: 'Kandy',
+        customerType: 'regular',
+        totalPurchases: 8500.0,
+        totalOrders: 12,
+      ),
+      Customer(
+        id: 'CUST003',
+        name: 'Michael Brown',
+        phone: '+94 761111222',
+        email: 'mike.brown@outlook.com',
+        address: '789 Pine Road, Galle',
+        city: 'Galle',
+        customerType: 'vip',
+        totalPurchases: 32000.0,
+        totalOrders: 45,
+      ),
+      Customer(
+        id: 'CUST004',
+        name: 'Emily Davis',
+        phone: '+94 773333444',
+        email: 'emily.davis@yahoo.com',
+        address: '321 Cedar Lane, Negombo',
+        city: 'Negombo',
+        customerType: 'regular',
+        totalPurchases: 6200.0,
+        totalOrders: 8,
+      ),
+      Customer(
+        id: 'CUST005',
+        name: 'David Wilson',
+        phone: '+94 765555666',
+        email: 'david.wilson@gmail.com',
+        address: '654 Elm Street, Jaffna',
+        city: 'Jaffna',
+        customerType: 'premium',
+        totalPurchases: 18500.0,
+        totalOrders: 28,
+      ),
+    ];
+  }
+
+  void _filterCustomers() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredCustomers = _customers.where((customer) {
+        return customer.name.toLowerCase().contains(query) ||
+               customer.phone.contains(query) ||
+               customer.email.toLowerCase().contains(query);
+      }).toList();
+    });
+  }
+
+  Widget _getCustomerTypeIcon(String type) {
+    switch (type) {
+      case 'vip':
+        return const Icon(Icons.stars, color: Colors.amber, size: 20);
+      case 'premium':
+        return const Icon(Icons.card_membership, color: Colors.purple, size: 20);
+      default:
+        return const Icon(Icons.person, color: Colors.grey, size: 20);
+    }
+  }
+
+  Color _getCustomerTypeColor(String type) {
+    switch (type) {
+      case 'vip':
+        return Colors.amber.withOpacity(0.1);
+      case 'premium':
+        return Colors.purple.withOpacity(0.1);
+      default:
+        return Colors.grey.withOpacity(0.1);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(
-        'Add Customer',
-        style: TextStyle(color: ThemeHelpers.getHeadingColor(context)),
-      ),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Name *',
-                border: OutlineInputBorder(),
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return SlideTransition(
+          position: _slideAnimation,
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter customer name';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _phoneController,
-              decoration: const InputDecoration(
-                labelText: 'Phone',
-                border: OutlineInputBorder(),
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.9,
+                height: MediaQuery.of(context).size.height * 0.8,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Theme.of(context).cardColor,
+                      Theme.of(context).cardColor.withOpacity(0.8),
+                    ],
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.people_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Select Customer',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(Icons.close, color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Tab Bar
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Theme.of(context).dividerColor,
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                      child: TabBar(
+                        controller: _tabController,
+                        labelColor: Theme.of(context).primaryColor,
+                        unselectedLabelColor: Colors.grey,
+                        indicatorColor: Theme.of(context).primaryColor,
+                        indicatorWeight: 3,
+                        tabs: const [
+                          Tab(
+                            icon: Icon(Icons.search),
+                            text: 'Existing Customers',
+                          ),
+                          Tab(
+                            icon: Icon(Icons.person_add),
+                            text: 'Add New',
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Tab Views
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildExistingCustomersTab(),
+                          _buildNewCustomerTab(),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              keyboardType: TextInputType.phone,
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildExistingCustomersTab() {
+    return Column(
+      children: [
+        // Search Bar
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Search customers by name, phone, or email...',
+              prefixIcon: Icon(Icons.search, color: Theme.of(context).primaryColor),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        _filterCustomers();
+                      },
+                    )
+                  : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
               ),
-              keyboardType: TextInputType.emailAddress,
+              filled: true,
+              fillColor: Theme.of(context).brightness == Brightness.light
+                  ? Colors.grey[100]
+                  : Colors.grey[800],
             ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(
-            'Cancel',
-            style: TextStyle(color: ThemeHelpers.getSecondaryGreyColor(context)),
           ),
         ),
-        ElevatedButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              final customer = Customer(
-                id: DateTime.now().millisecondsSinceEpoch.toString(),
-                name: _nameController.text,
-                phone: _phoneController.text,
-                email: _emailController.text,
-              );
-              widget.onCustomerAdded(customer);
-              Navigator.pop(context);
-            }
-          },
-          child: Text(
-            'Add',
-            style: TextStyle(color: Colors.white),
-          ),
+        
+        // Customer List
+        Expanded(
+          child: _isLoading
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).primaryColor,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Loading customers...',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : _filteredCustomers.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 64,
+                            color: Colors.white60,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No customers found',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Try adjusting your search criteria',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _filteredCustomers.length,
+                      itemBuilder: (context, index) {
+                        final customer = _filteredCustomers[index];
+                        return AnimationConfiguration.staggeredList(
+                          position: index,
+                          duration: const Duration(milliseconds: 375),
+                          child: SlideAnimation(
+                            verticalOffset: 50.0,
+                            child: FadeInAnimation(
+                              child: _buildCustomerCard(customer),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
         ),
       ],
     );
   }
 
+  Widget _buildCustomerCard(Customer customer) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          widget.onCustomerSelected(customer);
+          Navigator.pop(context);
+        },
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                _getCustomerTypeColor(customer.customerType),
+                Colors.transparent,
+              ],
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 25,
+                    backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                    child: Text(
+                      customer.name.substring(0, 1).toUpperCase(),
+                      style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                customer.name,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: ThemeHelpers.getHeadingColor(context),
+                                ),
+                              ),
+                            ),
+                            _getCustomerTypeIcon(customer.customerType),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          customer.phone,
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        if (customer.email.isNotEmpty)
+                          Text(
+                            customer.email,
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInfoChip(
+                      'Orders: ${customer.totalOrders}',
+                      Icons.shopping_bag,
+                      Colors.blue,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildInfoChip(
+                      'Rs. ${customer.totalPurchases.toStringAsFixed(0)}',
+                      Icons.account_balance_wallet,
+                      Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoChip(String label, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNewCustomerTab() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Customer Information',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: ThemeHelpers.getHeadingColor(context),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Full Name *',
+                        prefixIcon: const Icon(Icons.person),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter customer name';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    TextFormField(
+                      controller: _phoneController,
+                      decoration: InputDecoration(
+                        labelText: 'Phone Number *',
+                        prefixIcon: const Icon(Icons.phone),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      keyboardType: TextInputType.phone,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter phone number';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        labelText: 'Email Address',
+                        prefixIcon: const Icon(Icons.email),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    TextFormField(
+                      controller: _addressController,
+                      decoration: InputDecoration(
+                        labelText: 'Address',
+                        prefixIcon: const Icon(Icons.location_on),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      maxLines: 2,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 20),
+            
+            // Action Buttons
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Theme.of(context).primaryColor),
+                      ),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        final customer = Customer(
+                          id: 'CUST${DateTime.now().millisecondsSinceEpoch}',
+                          name: _nameController.text,
+                          phone: _phoneController.text,
+                          email: _emailController.text,
+                          address: _addressController.text,
+                          dateAdded: DateTime.now(),
+                        );
+                        widget.onCustomerSelected(customer);
+                        Navigator.pop(context);
+                        
+                        // Show success animation
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: [
+                                const Icon(Icons.check_circle, color: Colors.white),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text('Customer "${customer.name}" added successfully!'),
+                                ),
+                              ],
+                            ),
+                            backgroundColor: Colors.green,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Add Customer',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
+    _tabController.dispose();
+    _animationController.dispose();
+    _searchController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
+    _addressController.dispose();
     super.dispose();
+  }
+}
+
+// Animation Configuration Helper Class
+class AnimationConfiguration {
+  static Widget staggeredList({
+    required int position,
+    required Duration duration,
+    required Widget child,
+  }) {
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 100 + (position * 50)),
+      curve: Curves.easeOut,
+      child: child,
+    );
+  }
+}
+
+// Slide Animation Widget
+class SlideAnimation extends StatefulWidget {
+  final double verticalOffset;
+  final Widget child;
+
+  const SlideAnimation({
+    super.key,
+    required this.verticalOffset,
+    required this.child,
+  });
+
+  @override
+  State<SlideAnimation> createState() => _SlideAnimationState();
+}
+
+class _SlideAnimationState extends State<SlideAnimation>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _offsetAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _offsetAnimation = Tween<Offset>(
+      begin: Offset(0, widget.verticalOffset / 100),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    ));
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SlideTransition(
+      position: _offsetAnimation,
+      child: widget.child,
+    );
+  }
+}
+
+// Fade In Animation Widget
+class FadeInAnimation extends StatefulWidget {
+  final Widget child;
+
+  const FadeInAnimation({
+    super.key,
+    required this.child,
+  });
+
+  @override
+  State<FadeInAnimation> createState() => _FadeInAnimationState();
+}
+
+class _FadeInAnimationState extends State<FadeInAnimation>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeIn,
+    );
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _animation,
+      child: widget.child,
+    );
   }
 }

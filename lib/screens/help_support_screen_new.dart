@@ -8,15 +8,16 @@ class HelpSupportScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Help & Support',
-          style: TextStyle(
+          style: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(
             fontWeight: FontWeight.w600,
             letterSpacing: 1,
           ),
         ),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
+        iconTheme: Theme.of(context).appBarTheme.iconTheme,
         elevation: 8,
         shadowColor: Theme.of(context).primaryColor.withOpacity(0.3),
       ),
