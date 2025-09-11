@@ -369,6 +369,15 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
   Widget _buildStatCard(String title, String value, String subtitle, Color color, IconData icon) {
     return Card(
       elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withOpacity(0.2)
+              : Colors.transparent,
+          width: 1,
+        ),
+      ),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -431,6 +440,15 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
     });
 
     return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withOpacity(0.2)
+              : Colors.transparent,
+          width: 1,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

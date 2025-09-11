@@ -240,6 +240,12 @@ class SettingsScreen extends StatelessWidget {
       shadowColor: Theme.of(context).primaryColor.withOpacity(0.2),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withOpacity(0.2)
+              : Colors.transparent,
+          width: 1.5,
+        ),
       ),
       child: Container(
         decoration: BoxDecoration(

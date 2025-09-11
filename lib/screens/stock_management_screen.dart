@@ -204,6 +204,15 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withOpacity(0.2)
+              : Colors.transparent,
+          width: 1,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

@@ -316,6 +316,12 @@ class HelpSupportScreen extends StatelessWidget {
       shadowColor: Theme.of(context).primaryColor.withOpacity(0.1),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withOpacity(0.2)
+              : Colors.transparent,
+          width: 1,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),

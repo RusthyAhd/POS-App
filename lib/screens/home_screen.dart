@@ -1,11 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import '../models/product.dart';
 import '../models/billing_item.dart';
 import '../widgets/sliding_menu.dart';
-import '../providers/theme_provider.dart';
+import '../utils/theme_helpers.dart';
 import 'bill_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -314,7 +313,10 @@ class _HomeScreenState extends State<HomeScreen>
                     color: Theme.of(context).primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Theme.of(context).primaryColor.withOpacity(0.3),
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white.withOpacity(0.2)
+                          : Theme.of(context).primaryColor.withOpacity(0.3),
+                      width: 1.5,
                     ),
                   ),
                   child: Column(
@@ -347,118 +349,155 @@ class _HomeScreenState extends State<HomeScreen>
                         ],
                       ),
                       const SizedBox(height: 8),
-                      SizedBox(
-                        height: 80,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: _billingItems.length,
-                          itemBuilder: (context, index) {
-                            final item = _billingItems[index];
-                            return Container(
-                              width: 200,
-                              margin: const EdgeInsets.only(right: 8),
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
+                      Container(
+                        constraints: BoxConstraints(
+                          maxHeight: _billingItems.length > 3 ? 240 : double.infinity, // 80px per item * 3 = 240px
+                        ),
+                        child: SingleChildScrollView(
+                          physics: _billingItems.length > 3 
+                              ? const AlwaysScrollableScrollPhysics() 
+                              : const NeverScrollableScrollPhysics(),
+                          child: Column(
+                            children: _billingItems.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final item = entry.value;
+                              return Container(
+                                width: double.infinity,
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).cardColor,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                        ? Colors.white.withOpacity(0.1)
+                                        : Colors.transparent,
+                                    width: 1,
                                   ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      color: _getCategoryColor(item.category),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Icon(
-                                      _getCategoryIcon(item.category),
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          item.name,
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Text(
-                                      'LKR ${item.price.toStringAsFixed(2)} x ${item.quantity}',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Theme.of(context).primaryColor,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Total: LKR ${(item.price * item.quantity).toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                        fontSize: 9,
-                                        color: Colors.grey,
-                                      ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Theme.of(context).shadowColor.withOpacity(0.1),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
                                     ),
                                   ],
                                 ),
-                              ),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  InkWell(
-                                    onTap: () => _showEditBillItemDialog(index),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(4),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 45,
+                                      height: 45,
                                       decoration: BoxDecoration(
-                                        color: Colors.blue.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(4),
+                                        color: _getCategoryColor(item.category),
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
-                                      child: const Icon(
-                                        Icons.edit,
-                                        size: 14,
-                                        color: Colors.blue,
+                                      child: Icon(
+                                        _getCategoryIcon(item.category),
+                                        color: Colors.white,
+                                        size: 22,
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  InkWell(
-                                    onTap: () => _removeFromBilling(index),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: const Icon(
-                                        Icons.close,
-                                        size: 14,
-                                        color: Colors.red,
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            item.name,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: ThemeHelpers.getPrimaryTextColor(context),
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                'LKR ${item.price.toStringAsFixed(2)}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Theme.of(context).primaryColor,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                              Text(
+                                                ' x ${item.quantity}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: ThemeHelpers.getSecondaryGreyColor(context),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          Text(
+                                            'Total: LKR ${(item.price * item.quantity).toStringAsFixed(2)}',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: ThemeHelpers.getSubtleTextColor(context),
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        InkWell(
+                                          onTap: () => _showEditBillItemDialog(index),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(6),
+                                            decoration: BoxDecoration(
+                                              color: Colors.blue.withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(6),
+                                              border: Border.all(
+                                                color: Theme.of(context).brightness == Brightness.dark
+                                                    ? Colors.white.withOpacity(0.3)
+                                                    : Colors.transparent,
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: const Icon(
+                                              Icons.edit,
+                                              size: 16,
+                                              color: Colors.blue,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        InkWell(
+                                          onTap: () => _removeFromBilling(index),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(6),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red.withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(6),
+                                              border: Border.all(
+                                                color: Theme.of(context).brightness == Brightness.dark
+                                                    ? Colors.white.withOpacity(0.3)
+                                                    : Colors.transparent,
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: const Icon(
+                                              Icons.close,
+                                              size: 16,
+                                              color: Colors.red,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
                           ),
-                        );
-                      },
-                    ),
-                  ),
+                        ),
+                      ),
                 ],
               ),
             ),
@@ -583,8 +622,10 @@ class _HomeScreenState extends State<HomeScreen>
                 ],
         ),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 1.5,
+          color: Theme.of(context).brightness == Brightness.dark 
+              ? Colors.white.withOpacity(0.2)
+              : Colors.white.withOpacity(0.2),
+          width: Theme.of(context).brightness == Brightness.dark ? 2.0 : 1.5,
         ),
         boxShadow: [
           BoxShadow(
@@ -593,7 +634,7 @@ class _HomeScreenState extends State<HomeScreen>
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -691,9 +732,9 @@ class _HomeScreenState extends State<HomeScreen>
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withOpacity(isDark ? 0.1 : 0.2),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.3),
+                                  color: Colors.white.withOpacity(isDark ? 0.2 : 0.3),
                                   width: 1,
                                 ),
                               ),
@@ -715,7 +756,7 @@ class _HomeScreenState extends State<HomeScreen>
                                 shape: BoxShape.circle,
                                 gradient: RadialGradient(
                                   colors: [
-                                    Colors.white.withOpacity(0.6),
+                                    Colors.white.withOpacity(isDark ? 0.3 : 0.6),
                                     Colors.white.withOpacity(0.0),
                                   ],
                                 ),
@@ -742,7 +783,7 @@ class _HomeScreenState extends State<HomeScreen>
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 12,
-                            color: isDark ? Colors.white : Colors.black87,
+                            color: ThemeHelpers.getHeadingColor(context),
                             letterSpacing: 0.3,
                           ),
                           maxLines: 2,
@@ -827,6 +868,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildEmptyState() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -834,7 +876,7 @@ class _HomeScreenState extends State<HomeScreen>
           Icon(
             Icons.inventory_2_outlined,
             size: 80,
-            color: Colors.grey[400],
+            color: isDark ? Colors.grey[600] : Colors.grey[400],
           ),
           const SizedBox(height: 16),
           Text(
@@ -842,7 +884,7 @@ class _HomeScreenState extends State<HomeScreen>
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
+              color: ThemeHelpers.getPrimaryTextColor(context),
             ),
           ),
           const SizedBox(height: 8),
@@ -850,7 +892,7 @@ class _HomeScreenState extends State<HomeScreen>
             'Try adjusting your search or category filter',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: ThemeHelpers.getSecondaryGreyColor(context),
             ),
           ),
         ],
@@ -884,7 +926,9 @@ class _HomeScreenState extends State<HomeScreen>
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: Theme.of(context).brightness == Brightness.dark 
+                            ? Colors.grey[600] 
+                            : Colors.grey[300],
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -1078,7 +1122,10 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                   Text(
                     item.name,
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 14, 
+                      color: ThemeHelpers.getSecondaryGreyColor(context),
+                    ),
                   ),
                 ],
               ),
@@ -1093,8 +1140,16 @@ class _HomeScreenState extends State<HomeScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey[800]
+                      : Colors.grey[100],
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white.withOpacity(0.2)
+                        : Colors.transparent,
+                    width: 1,
+                  ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

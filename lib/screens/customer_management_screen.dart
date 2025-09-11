@@ -184,6 +184,15 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withOpacity(0.2)
+              : Colors.transparent,
+          width: 1,
+        ),
+      ),
       child: InkWell(
         onTap: () => _showCustomerDetails(customer),
         borderRadius: BorderRadius.circular(12),
