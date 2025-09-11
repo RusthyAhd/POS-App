@@ -337,7 +337,7 @@ class _HomeScreenState extends State<HomeScreen>
                           ),
                           Flexible(
                             child: Text(
-                              'Total: LKR ${_totalBill.toStringAsFixed(2)}',
+                              'Total: Rs. ${_totalBill.toStringAsFixed(2)}',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -416,7 +416,7 @@ class _HomeScreenState extends State<HomeScreen>
                                           Row(
                                             children: [
                                               Text(
-                                                'LKR ${item.price.toStringAsFixed(2)}',
+                                                'Rs. ${item.price.toStringAsFixed(2)}',
                                                 style: TextStyle(
                                                   fontSize: 12,
                                                   color: Theme.of(context).primaryColor,
@@ -433,7 +433,7 @@ class _HomeScreenState extends State<HomeScreen>
                                             ],
                                           ),
                                           Text(
-                                            'Total: LKR ${(item.price * item.quantity).toStringAsFixed(2)}',
+                                            'Total: Rs. ${(item.price * item.quantity).toStringAsFixed(2)}',
                                             style: TextStyle(
                                               fontSize: 11,
                                               color: ThemeHelpers.getSubtleTextColor(context),
@@ -593,7 +593,7 @@ class _HomeScreenState extends State<HomeScreen>
               backgroundColor: Theme.of(context).primaryColor,
               foregroundColor: Colors.white,
               icon: const Icon(Icons.receipt_long_rounded),
-              label: Text('Bill LKR ${_totalBill.toStringAsFixed(2)}'),
+              label: Text('Bill Rs. ${_totalBill.toStringAsFixed(2)}'),
             )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
@@ -815,7 +815,7 @@ class _HomeScreenState extends State<HomeScreen>
                                 ),
                               ),
                               child: Text(
-                                'LKR ${product.price.toStringAsFixed(2)}',
+                                'Rs. ${product.price.toStringAsFixed(2)}',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 10,
@@ -999,7 +999,7 @@ class _HomeScreenState extends State<HomeScreen>
                           ),
                         ),
                         Text(
-                          'LKR ${product.price.toStringAsFixed(2)}',
+                          'Rs. ${product.price.toStringAsFixed(2)}',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -1156,7 +1156,7 @@ class _HomeScreenState extends State<HomeScreen>
                   children: [
                     const Text('Original Price:'),
                     Text(
-                      'LKR ${item.product.price.toStringAsFixed(2)}',
+                      'Rs. ${item.product.price.toStringAsFixed(2)}',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -1171,10 +1171,16 @@ class _HomeScreenState extends State<HomeScreen>
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                 ],
+                onTap: () {
+                  // Auto-select all text when field is tapped
+                  priceController.selection = TextSelection(
+                    baseOffset: 0,
+                    extentOffset: priceController.text.length,
+                  );
+                },
                 decoration: InputDecoration(
                   labelText: 'Current Price (Rs.)',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  prefixIcon: const Icon(Icons.currency_rupee),
                 ),
               ),
               const SizedBox(height: 16),
@@ -1184,10 +1190,16 @@ class _HomeScreenState extends State<HomeScreen>
                 controller: quantityController,
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                onTap: () {
+                  // Auto-select all text when field is tapped
+                  quantityController.selection = TextSelection(
+                    baseOffset: 0,
+                    extentOffset: quantityController.text.length,
+                  );
+                },
                 decoration: InputDecoration(
                   labelText: 'Quantity',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  prefixIcon: const Icon(Icons.numbers),
                 ),
               ),
               const SizedBox(height: 16),
@@ -1220,7 +1232,7 @@ class _HomeScreenState extends State<HomeScreen>
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                             Text(
-                              'LKR ${total.toStringAsFixed(2)}',
+                              'Rs. ${total.toStringAsFixed(2)}',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
