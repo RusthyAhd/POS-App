@@ -133,7 +133,7 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Name: ${selectedCustomer!.name}',
+                        'Shop: ${selectedCustomer!.shopName}',
                         style: TextStyle(color: ThemeHelpers.getPrimaryTextColor(context)),
                       ),
                       if (selectedCustomer!.phone.isNotEmpty)
@@ -141,9 +141,9 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
                           'Phone: ${selectedCustomer!.phone}',
                           style: TextStyle(color: ThemeHelpers.getPrimaryTextColor(context)),
                         ),
-                      if (selectedCustomer!.email.isNotEmpty)
+                      if (selectedCustomer!.area.isNotEmpty)
                         Text(
-                          'Email: ${selectedCustomer!.email}',
+                          'Area: ${selectedCustomer!.area}',
                           style: TextStyle(color: ThemeHelpers.getPrimaryTextColor(context)),
                         ),
                     ] else ...[
@@ -598,7 +598,7 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
               if (selectedCustomer != null) ...[
                 const SizedBox(height: 8),
                 Text(
-                  'Customer: ${selectedCustomer!.name}',
+                  'Customer: ${selectedCustomer!.shopName}',
                   style: TextStyle(color: ThemeHelpers.getPrimaryTextColor(dialogContext)),
                 ),
                 if (selectedCustomer!.phone.isNotEmpty)
@@ -865,7 +865,7 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
     // Customer info
     if (selectedCustomer != null) {
       buffer.writeln('');
-      buffer.writeln('👤 *${selectedCustomer!.name}*');
+      buffer.writeln('👤 *${selectedCustomer!.shopName}*');
       if (selectedCustomer!.phone.isNotEmpty) {
         buffer.writeln('📞 ${selectedCustomer!.phone}');
       }
@@ -992,58 +992,33 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog>
     return [
       Customer(
         id: 'CUST001',
-        name: 'John Smith',
+        shopName: 'Smith Mart',
         phone: '+94 771234567',
-        email: 'john.smith@email.com',
-        address: '123 Main Street, Colombo',
-        city: 'Colombo',
-        customerType: 'premium',
-        totalPurchases: 15000.0,
-        totalOrders: 25,
+        area: 'Colombo 01',
       ),
       Customer(
         id: 'CUST002',
-        name: 'Sarah Johnson',
+        shopName: 'Johnson Store',
         phone: '+94 777654321',
-        email: 'sarah.j@gmail.com',
-        address: '456 Oak Avenue, Kandy',
-        city: 'Kandy',
-        customerType: 'regular',
-        totalPurchases: 8500.0,
-        totalOrders: 12,
+        area: 'Kandy',
       ),
       Customer(
         id: 'CUST003',
-        name: 'Michael Brown',
+        shopName: 'Brown Supermarket',
         phone: '+94 761111222',
-        email: 'mike.brown@outlook.com',
-        address: '789 Pine Road, Galle',
-        city: 'Galle',
-        customerType: 'vip',
-        totalPurchases: 32000.0,
-        totalOrders: 45,
+        area: 'Galle',
       ),
       Customer(
         id: 'CUST004',
-        name: 'Emily Davis',
+        shopName: 'Davis Mini Market',
         phone: '+94 773333444',
-        email: 'emily.davis@yahoo.com',
-        address: '321 Cedar Lane, Negombo',
-        city: 'Negombo',
-        customerType: 'regular',
-        totalPurchases: 6200.0,
-        totalOrders: 8,
+        area: 'Negombo',
       ),
       Customer(
         id: 'CUST005',
-        name: 'David Wilson',
+        shopName: 'Wilson Grocery',
         phone: '+94 765555666',
-        email: 'david.wilson@gmail.com',
-        address: '654 Elm Street, Jaffna',
-        city: 'Jaffna',
-        customerType: 'premium',
-        totalPurchases: 18500.0,
-        totalOrders: 28,
+        area: 'Jaffna',
       ),
     ];
   }
@@ -1052,34 +1027,14 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog>
     final query = _searchController.text.toLowerCase();
     setState(() {
       _filteredCustomers = _customers.where((customer) {
-        return customer.name.toLowerCase().contains(query) ||
+        return customer.shopName.toLowerCase().contains(query) ||
                customer.phone.contains(query) ||
-               customer.email.toLowerCase().contains(query);
+               customer.area.toLowerCase().contains(query);
       }).toList();
     });
   }
 
-  Widget _getCustomerTypeIcon(String type) {
-    switch (type) {
-      case 'vip':
-        return const Icon(Icons.stars, color: Colors.amber, size: 20);
-      case 'premium':
-        return const Icon(Icons.card_membership, color: Colors.purple, size: 20);
-      default:
-        return const Icon(Icons.person, color: Colors.grey, size: 20);
-    }
-  }
 
-  Color _getCustomerTypeColor(String type) {
-    switch (type) {
-      case 'vip':
-        return Colors.amber.withOpacity(0.1);
-      case 'premium':
-        return Colors.purple.withOpacity(0.1);
-      default:
-        return Colors.grey.withOpacity(0.1);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -1324,90 +1279,52 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog>
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
               colors: [
-                _getCustomerTypeColor(customer.customerType),
+                Theme.of(context).primaryColor.withOpacity(0.1),
                 Colors.transparent,
               ],
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 25,
-                    backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-                    child: Text(
-                      customer.name.substring(0, 1).toUpperCase(),
+              CircleAvatar(
+                radius: 25,
+                backgroundColor: Theme.of(context).primaryColor,
+                child: Icon(
+                  Icons.store,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      customer.shopName,
                       style: TextStyle(
-                        color: Theme.of(context).primaryColor,
-                        fontWeight: FontWeight.bold,
                         fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: ThemeHelpers.getHeadingColor(context),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                customer.name,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: ThemeHelpers.getHeadingColor(context),
-                                ),
-                              ),
-                            ),
-                            _getCustomerTypeIcon(customer.customerType),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          customer.phone,
-                          style: TextStyle(
-                            color: ThemeHelpers.getSecondaryTextColor(context),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        if (customer.email.isNotEmpty)
-                          Text(
-                            customer.email,
-                            style: TextStyle(
-                              color: ThemeHelpers.getSecondaryTextColor(context),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                      ],
+                    const SizedBox(height: 4),
+                    Text(
+                      customer.phone,
+                      style: TextStyle(
+                        color: ThemeHelpers.getSecondaryTextColor(context),
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildInfoChip(
-                      'Orders: ${customer.totalOrders}',
-                      Icons.shopping_bag,
-                      Colors.blue,
+                    Text(
+                      customer.area,
+                      style: TextStyle(
+                        color: ThemeHelpers.getSecondaryTextColor(context),
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildInfoChip(
-                      'Rs. ${customer.totalPurchases.toStringAsFixed(0)}',
-                      Icons.account_balance_wallet,
-                      Colors.green,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -1416,34 +1333,7 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog>
     );
   }
 
-  Widget _buildInfoChip(String label, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 4),
-          Flexible(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildNewCustomerTab() {
     return Padding(
@@ -1565,11 +1455,9 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog>
                       if (_formKey.currentState!.validate()) {
                         final customer = Customer(
                           id: 'CUST${DateTime.now().millisecondsSinceEpoch}',
-                          name: _nameController.text,
+                          shopName: _nameController.text,
                           phone: _phoneController.text,
-                          email: _emailController.text,
-                          address: _addressController.text,
-                          dateAdded: DateTime.now(),
+                          area: _emailController.text,
                         );
                         widget.onCustomerSelected(customer);
                         Navigator.pop(context);
@@ -1582,7 +1470,7 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog>
                                 const Icon(Icons.check_circle, color: Colors.white),
                                 const SizedBox(width: 8),
                                 Expanded(
-                                  child: Text('Customer "${customer.name}" added successfully!'),
+                                  child: Text('Customer "${customer.shopName}" added successfully!'),
                                 ),
                               ],
                             ),

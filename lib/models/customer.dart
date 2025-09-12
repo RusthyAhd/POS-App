@@ -1,99 +1,51 @@
 class Customer {
   final String id;
-  final String name;
+  final String shopName;
   final String phone;
-  final String email;
-  final String address;
-  final String city;
-  final String state;
-  final String pincode;
+  final String area;
   final DateTime dateAdded;
-  final double totalPurchases;
-  final int totalOrders;
-  final String customerType; // 'regular', 'premium', 'vip'
-  final String notes;
 
   Customer({
     required this.id,
-    required this.name,
+    required this.shopName,
     required this.phone,
-    this.email = '',
-    this.address = '',
-    this.city = '',
-    this.state = '',
-    this.pincode = '',
+    required this.area,
     DateTime? dateAdded,
-    this.totalPurchases = 0.0,
-    this.totalOrders = 0,
-    this.customerType = 'regular',
-    this.notes = '',
   }) : dateAdded = dateAdded ?? DateTime.now();
 
   factory Customer.fromJson(Map<String, dynamic> json) {
     return Customer(
       id: json['id'],
-      name: json['name'],
+      shopName: json['shopName'],
       phone: json['phone'],
-      email: json['email'] ?? '',
-      address: json['address'] ?? '',
-      city: json['city'] ?? '',
-      state: json['state'] ?? '',
-      pincode: json['pincode'] ?? '',
+      area: json['area'],
       dateAdded: json['dateAdded'] != null 
           ? DateTime.parse(json['dateAdded']) 
           : DateTime.now(),
-      totalPurchases: json['totalPurchases']?.toDouble() ?? 0.0,
-      totalOrders: json['totalOrders'] ?? 0,
-      customerType: json['customerType'] ?? 'regular',
-      notes: json['notes'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'name': name,
+      'shopName': shopName,
       'phone': phone,
-      'email': email,
-      'address': address,
-      'city': city,
-      'state': state,
-      'pincode': pincode,
+      'area': area,
       'dateAdded': dateAdded.toIso8601String(),
-      'totalPurchases': totalPurchases,
-      'totalOrders': totalOrders,
-      'customerType': customerType,
-      'notes': notes,
     };
   }
 
   Customer copyWith({
-    String? name,
+    String? shopName,
     String? phone,
-    String? email,
-    String? address,
-    String? city,
-    String? state,
-    String? pincode,
-    double? totalPurchases,
-    int? totalOrders,
-    String? customerType,
-    String? notes,
+    String? area,
   }) {
     return Customer(
       id: id,
-      name: name ?? this.name,
+      shopName: shopName ?? this.shopName,
       phone: phone ?? this.phone,
-      email: email ?? this.email,
-      address: address ?? this.address,
-      city: city ?? this.city,
-      state: state ?? this.state,
-      pincode: pincode ?? this.pincode,
+      area: area ?? this.area,
       dateAdded: dateAdded,
-      totalPurchases: totalPurchases ?? this.totalPurchases,
-      totalOrders: totalOrders ?? this.totalOrders,
-      customerType: customerType ?? this.customerType,
-      notes: notes ?? this.notes,
     );
   }
 }

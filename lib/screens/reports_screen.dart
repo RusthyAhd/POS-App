@@ -51,9 +51,9 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
             date: billDate.add(Duration(hours: j * 2)),
             customer: i % 3 == 0 ? Customer(
               id: 'CUST${i + j}',
-              name: 'Customer ${i + j + 1}',
+              shopName: 'Customer ${i + j + 1}',
               phone: '+94 ${7000000000 + i + j}',
-              email: 'customer${i + j + 1}@email.com',
+              area: 'Area ${(i + j) % 3 + 1}',
             ) : null,
             items: [
               BillingItem(
@@ -537,7 +537,9 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
                   const SizedBox(height: 4),
                   LinearProgressIndicator(
                     value: percentage / 100,
-                    backgroundColor: Colors.grey[300],
+                    backgroundColor: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[700]
+                        : Colors.grey[300],
                     valueColor: AlwaysStoppedAnimation<Color>(
                       Theme.of(context).primaryColor,
                     ),
@@ -640,7 +642,9 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
             label,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey[600],
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey[400]
+                  : Colors.grey[600],
             ),
             textAlign: TextAlign.center,
           ),
@@ -674,7 +678,9 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
                     flex: 3,
                     child: LinearProgressIndicator(
                       value: percentage / 100,
-                      backgroundColor: Colors.grey[300],
+                      backgroundColor: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey[700]
+                          : Colors.grey[300],
                       valueColor: AlwaysStoppedAnimation<Color>(
                         entry.key == 'Cash' ? Colors.green : Colors.blue,
                       ),
@@ -780,7 +786,11 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
+                  border: Border.all(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[600]!
+                        : Colors.grey[300]!,
+                  ),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -797,7 +807,9 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
                           Text(
                             '${productQuantity[entry.key]} units sold',
                             style: TextStyle(
-                              color: Colors.grey[600],
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
                               fontSize: 12,
                             ),
                           ),
@@ -864,7 +876,9 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
                         Text(
                           '${entry.value['quantity']} items sold',
                           style: TextStyle(
-                            color: Colors.grey[600],
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[400]
+                                : Colors.grey[600],
                             fontSize: 12,
                           ),
                         ),
@@ -1022,7 +1036,11 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey[600]!
+                      : Colors.grey[300]!,
+                ),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -1030,7 +1048,7 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
                   CircleAvatar(
                     backgroundColor: Theme.of(context).primaryColor,
                     child: Text(
-                      customer.name.substring(0, 1).toUpperCase(),
+                      customer.shopName.substring(0, 1).toUpperCase(),
                       style: const TextStyle(color: Colors.white),
                     ),
                   ),
@@ -1040,13 +1058,15 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          customer.name,
+                          customer.shopName,
                           style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
                         Text(
                           '${customerOrders[entry.key]} orders',
                           style: TextStyle(
-                            color: Colors.grey[600],
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[400]
+                                : Colors.grey[600],
                             fontSize: 12,
                           ),
                         ),
@@ -1097,7 +1117,9 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
                     flex: 3,
                     child: LinearProgressIndicator(
                       value: percentage / 100,
-                      backgroundColor: Colors.grey[300],
+                      backgroundColor: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey[700]
+                          : Colors.grey[300],
                       valueColor: AlwaysStoppedAnimation<Color>(
                         _getCustomerTypeColor(entry.key),
                       ),
@@ -1123,7 +1145,7 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
       case 'regular':
         return Colors.blue;
       default:
-        return Colors.grey;
+        return Colors.grey[600]!;
     }
   }
 

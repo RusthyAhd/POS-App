@@ -45,9 +45,9 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
           date: billDate,
           customer: i % 3 == 0 ? Customer(
             id: 'CUST$i',
-            name: 'Customer ${i + 1}',
+            shopName: 'Customer ${i + 1}',
             phone: '+94 ${7000000000 + i}',
-            email: 'customer${i + 1}@email.com',
+            area: 'Area ${i % 3 + 1}',
           ) : null,
           items: [
             BillingItem(
@@ -82,7 +82,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
       _filteredBills = _bills.where((bill) {
         bool matchesSearch = _searchController.text.isEmpty ||
             bill.id.toLowerCase().contains(_searchController.text.toLowerCase()) ||
-            (bill.customer?.name.toLowerCase().contains(_searchController.text.toLowerCase()) ?? false);
+            (bill.customer?.shopName.toLowerCase().contains(_searchController.text.toLowerCase()) ?? false);
 
         bool matchesDate = _selectedDate == null ||
             (bill.date.year == _selectedDate!.year &&
@@ -303,7 +303,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                     Icon(Icons.person, size: 16, color: Colors.grey[600]),
                     const SizedBox(width: 4),
                     Text(
-                      bill.customer!.name,
+                      bill.customer!.shopName,
                       style: TextStyle(color: Colors.grey[600], fontSize: 12),
                     ),
                   ],
@@ -475,7 +475,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                             children: [
                               const Icon(Icons.person, size: 16),
                               const SizedBox(width: 8),
-                              Text(bill.customer!.name),
+                              Text(bill.customer!.shopName),
                             ],
                           ),
                           if (bill.customer!.phone.isNotEmpty) ...[
