@@ -1,10 +1,12 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../models/product.dart';
 import '../models/billing_item.dart';
 import '../widgets/sliding_menu.dart';
 import '../utils/theme_helpers.dart';
+import '../providers/product_provider.dart';
 import 'bill_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -16,206 +18,53 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+  TabController? _tabController;
   final TextEditingController _searchController = TextEditingController();
   String _selectedCategory = 'All';
   List<BillingItem> _billingItems = [];
-  
-  final List<String> _categories = [
-    'All',
-    'Anchor',
-    'Kotmalee',
-    'Sunsilk',
-    'Baby Cheramy',
-    'Beverages',
-    'Snacks',
-    'Rice & Grains',
-  ];
-
-  // Sample products data
-  final List<Product> _products = [
-    // Anchor Products
-    Product(
-      id: '1',
-      name: 'Anchor Milk Powder 400g',
-      description: 'Premium quality full cream milk powder from New Zealand',
-      price: 850.00,
-      category: 'Anchor',
-      image: 'anchor_milk',
-      stock: 45,
-    ),
-    Product(
-      id: '2',
-      name: 'Anchor Cheese Slices 200g',
-      description: 'Processed cheese slices perfect for sandwiches',
-      price: 520.00,
-      category: 'Anchor',
-      image: 'anchor_cheese',
-      stock: 30,
-    ),
-    Product(
-      id: '3',
-      name: 'Anchor Butter 200g',
-      description: 'Pure New Zealand butter for cooking and baking',
-      price: 680.00,
-      category: 'Anchor',
-      image: 'anchor_butter',
-      stock: 25,
-    ),
-    
-    // Kotmalee Products
-    Product(
-      id: '4',
-      name: 'Kotmalee Black Tea 200g',
-      description: 'Premium Ceylon black tea from highland estates',
-      price: 320.00,
-      category: 'Kotmalee',
-      image: 'kotmalee_tea',
-      stock: 60,
-    ),
-    Product(
-      id: '5',
-      name: 'Kotmalee Green Tea 100g',
-      description: 'Natural green tea with antioxidants',
-      price: 450.00,
-      category: 'Kotmalee',
-      image: 'kotmalee_green',
-      stock: 35,
-    ),
-    
-    // Sunsilk Products
-    Product(
-      id: '6',
-      name: 'Sunsilk Shampoo 350ml',
-      description: 'Nourishing shampoo for soft and silky hair',
-      price: 480.00,
-      category: 'Sunsilk',
-      image: 'sunsilk_shampoo',
-      stock: 40,
-    ),
-    Product(
-      id: '7',
-      name: 'Sunsilk Conditioner 200ml',
-      description: 'Hair conditioner for smooth and manageable hair',
-      price: 420.00,
-      category: 'Sunsilk',
-      image: 'sunsilk_conditioner',
-      stock: 28,
-    ),
-    
-    // Baby Cheramy Products
-    Product(
-      id: '8',
-      name: 'Baby Cheramy Soap 75g',
-      description: 'Gentle baby soap with natural ingredients',
-      price: 180.00,
-      category: 'Baby Cheramy',
-      image: 'baby_soap',
-      stock: 55,
-    ),
-    Product(
-      id: '9',
-      name: 'Baby Cheramy Lotion 200ml',
-      description: 'Moisturizing baby lotion for soft skin',
-      price: 350.00,
-      category: 'Baby Cheramy',
-      image: 'baby_lotion',
-      stock: 32,
-    ),
-    
-    // Beverages
-    Product(
-      id: '10',
-      name: 'Coca Cola 330ml',
-      description: 'Refreshing carbonated soft drink',
-      price: 120.00,
-      category: 'Beverages',
-      image: 'coca_cola',
-      stock: 80,
-    ),
-    Product(
-      id: '11',
-      name: 'Sprite 330ml',
-      description: 'Lemon-lime flavored carbonated drink',
-      price: 120.00,
-      category: 'Beverages',
-      image: 'sprite',
-      stock: 75,
-    ),
-    
-    // Snacks
-    Product(
-      id: '12',
-      name: 'Maliban Krackjack 100g',
-      description: 'Crispy coconut biscuits with chocolate',
-      price: 180.00,
-      category: 'Snacks',
-      image: 'krackjack',
-      stock: 65,
-    ),
-    Product(
-      id: '13',
-      name: 'Munchee Tikiri 200g',
-      description: 'Traditional Sri Lankan coconut biscuits',
-      price: 220.00,
-      category: 'Snacks',
-      image: 'tikiri',
-      stock: 50,
-    ),
-    
-    // Rice & Grains
-    Product(
-      id: '14',
-      name: 'Keeri Samba Rice 1kg',
-      description: 'Premium quality Sri Lankan rice',
-      price: 280.00,
-      category: 'Rice & Grains',
-      image: 'keeri_samba',
-      stock: 120,
-    ),
-    Product(
-      id: '15',
-      name: 'Red Rice 1kg',
-      description: 'Healthy red rice rich in nutrients',
-      price: 320.00,
-      category: 'Rice & Grains',
-      image: 'red_rice',
-      stock: 90,
-    ),
-  ];
+  int _currentCategoriesLength = 0;
+  bool _isDisposing = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _categories.length, vsync: this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _initializeTabController();
+  }
+
+  void _initializeTabController() {
+    if (_isDisposing) return;
+    
+    try {
+      final productProvider = Provider.of<ProductProvider>(context, listen: false);
+      if (_currentCategoriesLength != productProvider.categories.length) {
+        // Safely dispose old controller
+        if (_tabController != null) {
+          _tabController!.dispose();
+          _tabController = null;
+        }
+        _tabController = TabController(length: productProvider.categories.length, vsync: this);
+        _currentCategoriesLength = productProvider.categories.length;
+      }
+    } catch (e) {
+      // Handle any errors during initialization
+      print('Error initializing TabController: $e');
+    }
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _isDisposing = true;
+    _tabController?.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
-  List<Product> get _filteredProducts {
-    List<Product> filtered = _products;
-    
-    // Filter by category
-    if (_selectedCategory != 'All') {
-      filtered = filtered.where((product) => 
-        product.category == _selectedCategory).toList();
-    }
-    
-    // Filter by search
-    if (_searchController.text.isNotEmpty) {
-      filtered = filtered.where((product) =>
-        product.name.toLowerCase().contains(_searchController.text.toLowerCase()) ||
-        product.description.toLowerCase().contains(_searchController.text.toLowerCase())
-      ).toList();
-    }
-    
-    return filtered;
-  }
+
 
   void _addToBilling(Product product) {
     setState(() {
@@ -287,7 +136,16 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Consumer<ProductProvider>(
+      builder: (context, productProvider, child) {
+        final filteredProducts = productProvider.getFilteredProducts(_selectedCategory, _searchController.text);
+        
+        // Check if we need to update tab controller
+        if (_currentCategoriesLength != productProvider.categories.length) {
+          _initializeTabController();
+        }
+        
+        return Scaffold(
       appBar: AppBar(
         title: Text(
           'Pegas Flex',
@@ -533,31 +391,34 @@ class _HomeScreenState extends State<HomeScreen>
               ),
               
               // Category tabs
-              Container(
-                height: 50,
-                margin: const EdgeInsets.only(bottom: 16),
-                child: TabBar(
-                  controller: _tabController,
-                  isScrollable: true,
-                  onTap: (index) {
-                    setState(() {
-                      _selectedCategory = _categories[index];
-                    });
-                  },
-                  tabs: _categories.map((category) => Tab(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        category,
-                        style: const TextStyle(fontWeight: FontWeight.w500),
+              if (_tabController != null && _tabController!.length == productProvider.categories.length)
+                Container(
+                  height: 50,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  child: TabBar(
+                    controller: _tabController,
+                    isScrollable: true,
+                    onTap: (index) {
+                      if (index < productProvider.categories.length) {
+                        setState(() {
+                          _selectedCategory = productProvider.categories[index];
+                        });
+                      }
+                    },
+                    tabs: productProvider.categories.map((category) => Tab(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          category,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
                       ),
-                    ),
-                  )).toList(),
+                    )).toList(),
+                  ),
                 ),
-              ),
               
               // Products grid
-              _filteredProducts.isEmpty
+              filteredProducts.isEmpty
                   ? _buildEmptyState()
                   : GridView.builder(
                       shrinkWrap: true,
@@ -568,9 +429,9 @@ class _HomeScreenState extends State<HomeScreen>
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
                       ),
-                      itemCount: _filteredProducts.length,
+                      itemCount: filteredProducts.length,
                       itemBuilder: (context, index) {
-                        return _buildProductCard(_filteredProducts[index]);
+                        return _buildProductCard(filteredProducts[index]);
                       },
                     ),
             ],
@@ -597,6 +458,8 @@ class _HomeScreenState extends State<HomeScreen>
             )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+    );
+      },
     );
   }
 
@@ -1349,4 +1212,5 @@ class _HomeScreenState extends State<HomeScreen>
       ),
     );
   }
+
 }
