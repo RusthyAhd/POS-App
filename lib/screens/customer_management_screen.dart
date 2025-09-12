@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../models/customer.dart';
+import '../utils/theme_helpers.dart';
 
 class CustomerManagementScreen extends StatefulWidget {
   const CustomerManagementScreen({super.key});
@@ -214,16 +215,17 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
                       children: [
                         Text(
                           customer.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
+                            color: ThemeHelpers.getBrightTextColor(context),
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'ID: ${customer.id}',
                           style: TextStyle(
-                            color: Colors.grey[600],
+                            color: ThemeHelpers.getSecondaryTextColor(context),
                             fontSize: 12,
                           ),
                         ),

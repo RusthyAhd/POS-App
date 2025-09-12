@@ -766,37 +766,87 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
   }
 
   void _shareBill(BuildContext context) async {
-    // Create bill text for sharing
-    final billText = _generateBillText();
-    
-    // WhatsApp URL scheme
-    final whatsappUrl = 'whatsapp://send?text=${Uri.encodeComponent(billText)}';
-    final whatsappWebUrl = 'https://web.whatsapp.com/send?text=${Uri.encodeComponent(billText)}';
-    
     try {
-      // Try to launch WhatsApp app first
+      // Create bill text for sharing
+      final billText = _generateBillText();
+      
+      // Try different WhatsApp sharing methods
+      await _shareToWhatsApp(billText, context);
+      
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to share bill: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _shareToWhatsApp(String billText, BuildContext context) async {
+    try {
+      // Method 1: Try WhatsApp direct URL (most reliable)
+      final whatsappUrl = 'https://wa.me/?text=${Uri.encodeComponent(billText)}';
+      
       if (await canLaunchUrl(Uri.parse(whatsappUrl))) {
-        await launchUrl(Uri.parse(whatsappUrl));
-      } else if (await canLaunchUrl(Uri.parse(whatsappWebUrl))) {
-        // Fallback to WhatsApp Web
-        await launchUrl(Uri.parse(whatsappWebUrl), mode: LaunchMode.externalApplication);
-      } else {
-        // If WhatsApp is not available, show error
+        await launchUrl(
+          Uri.parse(whatsappUrl),
+          mode: LaunchMode.externalApplication,
+        );
+        
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('WhatsApp is not installed on this device'),
-              backgroundColor: Colors.red,
+              content: Text('Opening WhatsApp...'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
             ),
           );
         }
+        return;
       }
+
+      // Method 2: Try WhatsApp app URL scheme
+      final whatsappAppUrl = 'whatsapp://send?text=${Uri.encodeComponent(billText)}';
+      
+      if (await canLaunchUrl(Uri.parse(whatsappAppUrl))) {
+        await launchUrl(
+          Uri.parse(whatsappAppUrl),
+          mode: LaunchMode.externalApplication,
+        );
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Opening WhatsApp...'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+        return;
+      }
+
+      // If WhatsApp is not available, show message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('WhatsApp not found. Please install WhatsApp to share bills.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Failed to share bill'),
+            content: Text('Unable to share to WhatsApp. Please check your internet connection.'),
             backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
           ),
         );
       }
@@ -808,48 +858,43 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
     
     // Header
     buffer.writeln('🧾 *PEGAS FLEX - BILL RECEIPT*');
-    buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    buffer.writeln('📄 Bill No: ${widget.billNumber}');
-    buffer.writeln('📅 Date: ${DateTime.now().toString().split(' ')[0]}');
-    buffer.writeln('🕐 Time: ${DateTime.now().toString().split(' ')[1].substring(0, 8)}');
+    buffer.writeln('─────────────────────────');
+    buffer.writeln('📄 Bill: ${widget.billNumber}');
+    buffer.writeln('📅 ${DateTime.now().toString().split(' ')[0]} ${DateTime.now().toString().split(' ')[1].substring(0, 5)}');
     
     // Customer info
     if (selectedCustomer != null) {
-      buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      buffer.writeln('👤 *CUSTOMER DETAILS*');
-      buffer.writeln('Name: ${selectedCustomer!.name}');
+      buffer.writeln('');
+      buffer.writeln('👤 *${selectedCustomer!.name}*');
       if (selectedCustomer!.phone.isNotEmpty) {
-        buffer.writeln('Phone: ${selectedCustomer!.phone}');
-      }
-      if (selectedCustomer!.email.isNotEmpty) {
-        buffer.writeln('Email: ${selectedCustomer!.email}');
+        buffer.writeln('📞 ${selectedCustomer!.phone}');
       }
     }
     
-    buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    buffer.writeln('🛒 *ITEMS*');
+    buffer.writeln('');
+    buffer.writeln('🛒 *ITEMS:*');
     
-    // Items
+    // Items - more compact format
     for (int i = 0; i < widget.billingItems.length; i++) {
       final item = widget.billingItems[i];
-      buffer.writeln('${i + 1}. ${item.name}');
-      buffer.writeln('   Qty: ${item.quantity} × Rs.${item.price.toStringAsFixed(2)}');
-      buffer.writeln('   Total: Rs.${item.totalPrice.toStringAsFixed(2)}');
-      buffer.writeln('');
+      buffer.writeln('${i + 1}. *${item.name}*');
+      buffer.writeln('   ${item.quantity} × Rs.${item.price.toStringAsFixed(2)} = Rs.${item.totalPrice.toStringAsFixed(2)}');
     }
     
     // Totals
-    buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    buffer.writeln('');
+    buffer.writeln('─────────────────────────');
     buffer.writeln('💰 *BILL SUMMARY*');
     buffer.writeln('Subtotal: Rs.${subtotalAmount.toStringAsFixed(2)}');
     if (discountAmount > 0) {
-      buffer.writeln('Discount: Rs.${discountAmount.toStringAsFixed(2)}');
+      buffer.writeln('Discount: -Rs.${discountAmount.toStringAsFixed(2)}');
     }
-    buffer.writeln('*Final Amount: Rs.${finalAmount.toStringAsFixed(2)}*');
-    buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━');
     buffer.writeln('');
-    buffer.writeln('Thank you for your business! 🙏');
-    buffer.writeln('*Pegas Flex POS System*');
+    buffer.writeln('🎯 *TOTAL: Rs.${finalAmount.toStringAsFixed(2)}*');
+    buffer.writeln('─────────────────────────');
+    buffer.writeln('');
+    buffer.writeln('Thank you for shopping with us! 🙏');
+    buffer.writeln('_Powered by Pegas Flex POS_');
     
     return buffer.toString();
   }
@@ -1325,7 +1370,7 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog>
                         Text(
                           customer.phone,
                           style: TextStyle(
-                            color: Colors.white70,
+                            color: ThemeHelpers.getSecondaryTextColor(context),
                             fontSize: 14,
                             fontWeight: FontWeight.w400,
                           ),
@@ -1334,7 +1379,7 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog>
                           Text(
                             customer.email,
                             style: TextStyle(
-                              color: Colors.white70,
+                              color: ThemeHelpers.getSecondaryTextColor(context),
                               fontSize: 14,
                               fontWeight: FontWeight.w400,
                             ),

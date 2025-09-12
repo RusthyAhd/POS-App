@@ -191,12 +191,12 @@ class ThemeProvider extends ChangeNotifier {
       titleLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
       titleMedium: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
       titleSmall: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
-      bodyLarge: TextStyle(color: Colors.white),
-      bodyMedium: TextStyle(color: Colors.white),
-      bodySmall: TextStyle(color: Colors.white70),
+      bodyLarge: TextStyle(color: Colors.white, fontSize: 16),
+      bodyMedium: TextStyle(color: Colors.white, fontSize: 14),
+      bodySmall: TextStyle(color: Colors.white70, fontSize: 12),
       labelLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
-      labelMedium: TextStyle(color: Colors.white),
-      labelSmall: TextStyle(color: Colors.white70),
+      labelMedium: TextStyle(color: Colors.white, fontSize: 12),
+      labelSmall: TextStyle(color: Colors.white70, fontSize: 11),
     ),
     iconTheme: const IconThemeData(
       color: Colors.white,
@@ -279,9 +279,32 @@ class ThemeProvider extends ChangeNotifier {
       ),
       prefixIconColor: Colors.white70,
       suffixIconColor: Colors.white70,
+      labelStyle: const TextStyle(color: Colors.white70),
+      hintStyle: const TextStyle(color: Colors.white54),
+      floatingLabelStyle: const TextStyle(color: Colors.white),
     ),
     drawerTheme: const DrawerThemeData(
       backgroundColor: Color(0xFF0F172A),
+    ),
+    dialogTheme: const DialogThemeData(
+      backgroundColor: Color(0xFF1E293B),
+      titleTextStyle: TextStyle(
+        color: Colors.white,
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+      ),
+      contentTextStyle: TextStyle(
+        color: Colors.white,
+        fontSize: 16,
+      ),
+    ),
+    snackBarTheme: const SnackBarThemeData(
+      backgroundColor: Color(0xFF374151),
+      contentTextStyle: TextStyle(
+        color: Colors.white,
+        fontSize: 16,
+      ),
+      actionTextColor: Color(0xFF051650),
     ),
   );
 }

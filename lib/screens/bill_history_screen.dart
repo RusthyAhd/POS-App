@@ -4,6 +4,7 @@ import '../models/bill.dart';
 import '../models/customer.dart';
 import '../models/product.dart';
 import '../models/billing_item.dart';
+import '../utils/theme_helpers.dart';
 
 class BillHistoryScreen extends StatefulWidget {
   const BillHistoryScreen({super.key});
@@ -261,9 +262,10 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                 children: [
                   Text(
                     bill.id,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
+                      color: ThemeHelpers.getBrightTextColor(context),
                     ),
                   ),
                   Container(

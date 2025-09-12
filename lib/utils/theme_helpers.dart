@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
 class ThemeHelpers {
-  // Get appropriate border for dark/light theme
+  // Get appropr  // Get primary text color - white for dark theme, dark grey for light theme  
+  static Color getPrimaryTextColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? Colors.white
+        : Colors.grey[800]!;
+  }
+
+  // Get secondary grey color for less important content dark/light theme
   static BorderSide getThemeBorder(BuildContext context, {double width = 1.0, double opacity = 0.2}) {
     return BorderSide(
       color: Theme.of(context).brightness == Brightness.dark
@@ -79,14 +86,7 @@ class ThemeHelpers {
         : Colors.black87;
   }
 
-  // Get primary text color - light grey for dark theme, dark grey for light theme
-  static Color getPrimaryTextColor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? Colors.grey[300]!
-        : Colors.grey[800]!;
-  }
-
-  // Get secondary text color - lighter grey for dark theme, medium grey for light theme
+  // Get secondary grey color for less important content
   static Color getSecondaryGreyColor(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
         ? Colors.grey[400]!
@@ -96,7 +96,28 @@ class ThemeHelpers {
   // Get subtle text color - more muted for less important text
   static Color getSubtleTextColor(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
-        ? Colors.grey[500]!
+        ? Colors.grey[400]!
         : Colors.grey[500]!;
+  }
+
+  // Get bright text color for high visibility in dark theme
+  static Color getBrightTextColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? Colors.white
+        : Colors.black87;
+  }
+
+  // Get content text color for body text
+  static Color getContentTextColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? Colors.grey[200]!
+        : Colors.grey[700]!;
+  }
+
+  // Get dialog text color for dialog content
+  static Color getDialogTextColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? Colors.white
+        : Colors.black87;
   }
 }

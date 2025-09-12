@@ -848,8 +848,8 @@ class _HomeScreenState extends State<HomeScreen>
                                   fontSize: 8,
                                   fontWeight: FontWeight.w600,
                                   color: product.stock > 10
-                                      ? Colors.green[700]
-                                      : Colors.orange[700],
+                                      ? (Theme.of(context).brightness == Brightness.dark ? Colors.green[300] : Colors.green[700])
+                                      : (Theme.of(context).brightness == Brightness.dark ? Colors.orange[300] : Colors.orange[700]),
                                 ),
                               ),
                             ),
@@ -964,9 +964,10 @@ class _HomeScreenState extends State<HomeScreen>
                   // Product details
                   Text(
                     product.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
+                      color: ThemeHelpers.getBrightTextColor(context),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -981,7 +982,10 @@ class _HomeScreenState extends State<HomeScreen>
                   const SizedBox(height: 12),
                   Text(
                     product.description,
-                    style: const TextStyle(fontSize: 14),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: ThemeHelpers.getContentTextColor(context),
+                    ),
                   ),
                   const SizedBox(height: 20),
                 
@@ -991,11 +995,11 @@ class _HomeScreenState extends State<HomeScreen>
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Price',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey,
+                            color: ThemeHelpers.getSecondaryTextColor(context),
                           ),
                         ),
                         Text(
@@ -1011,11 +1015,11 @@ class _HomeScreenState extends State<HomeScreen>
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Text(
+                        Text(
                           'In Stock',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey,
+                            color: ThemeHelpers.getSecondaryTextColor(context),
                           ),
                         ),
                         Text(
@@ -1024,8 +1028,8 @@ class _HomeScreenState extends State<HomeScreen>
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: product.stock > 10 
-                                ? Colors.green[700] 
-                                : Colors.orange[700],
+                                ? (Theme.of(context).brightness == Brightness.dark ? Colors.green[300] : Colors.green[700])
+                                : (Theme.of(context).brightness == Brightness.dark ? Colors.orange[300] : Colors.orange[700]),
                           ),
                         ),
                       ],
