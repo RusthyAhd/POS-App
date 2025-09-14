@@ -212,12 +212,12 @@ class _SplashScreenState extends State<SplashScreen>
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.white.withOpacity(0.3),
+                                  color: Colors.white.withValues(alpha: 0.3),
                                   blurRadius: 30,
                                   spreadRadius: 10,
                                 ),
                                 BoxShadow(
-                                  color: const Color(0xFF051650).withOpacity(0.5),
+                                  color: const Color(0xFF051650).withValues(alpha: 0.5),
                                   blurRadius: 50,
                                   offset: const Offset(0, 20),
                                 ),
@@ -233,7 +233,7 @@ class _SplashScreenState extends State<SplashScreen>
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: Colors.white.withOpacity(0.1),
+                                      color: Colors.white.withValues(alpha: 0.1),
                                       width: 2,
                                     ),
                                   ),
@@ -247,7 +247,7 @@ class _SplashScreenState extends State<SplashScreen>
                                     color: Colors.white,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.white.withOpacity(0.2),
+                                        color: Colors.white.withValues(alpha: 0.2),
                                         blurRadius: 20,
                                         spreadRadius: 5,
                                       ),
@@ -292,23 +292,23 @@ class _SplashScreenState extends State<SplashScreen>
                                         style: TextStyle(
                                           fontSize: 38,
                                           fontWeight: FontWeight.w300,
-                                          color: Colors.white.withOpacity(_logoOpacity.value),
+                                          color: Colors.white.withValues(alpha: _logoOpacity.value),
                                           letterSpacing: 4,
                                           height: 1.1,
                                           fontFamily: 'Arial',
                                           shadows: [
                                             Shadow(
-                                              color: Colors.white.withOpacity(0.4 * _logoOpacity.value),
+                                              color: Colors.white.withValues(alpha: 0.4 * _logoOpacity.value),
                                               offset: const Offset(0, 1),
                                               blurRadius: 12,
                                             ),
                                             Shadow(
-                                              color: const Color(0xFF051650).withOpacity(0.5 * _logoOpacity.value),
+                                              color: const Color(0xFF051650).withValues(alpha: 0.5 * _logoOpacity.value),
                                               offset: const Offset(0, 3),
                                               blurRadius: 15,
                                             ),
                                             Shadow(
-                                              color: Colors.blue.withOpacity(0.2 * _logoOpacity.value),
+                                              color: Colors.blue.withValues(alpha: 0.2 * _logoOpacity.value),
                                               offset: const Offset(0, 0),
                                               blurRadius: 20,
                                             ),
@@ -326,16 +326,16 @@ class _SplashScreenState extends State<SplashScreen>
                                           gradient: LinearGradient(
                                             colors: [
                                               Colors.transparent,
-                                              Colors.white.withOpacity(0.6 * _logoOpacity.value),
-                                              Colors.blue.withOpacity(0.3 * _logoOpacity.value),
-                                              Colors.white.withOpacity(0.6 * _logoOpacity.value),
+                                              Colors.white.withValues(alpha: 0.6 * _logoOpacity.value),
+                                              Colors.blue.withValues(alpha: 0.3 * _logoOpacity.value),
+                                              Colors.white.withValues(alpha: 0.6 * _logoOpacity.value),
                                               Colors.transparent,
                                             ],
                                             stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.white.withOpacity(0.2 * _logoOpacity.value),
+                                              color: Colors.white.withValues(alpha: 0.2 * _logoOpacity.value),
                                               blurRadius: 6,
                                               spreadRadius: 0.5,
                                             ),
@@ -379,10 +379,10 @@ class _SplashScreenState extends State<SplashScreen>
                                 height: 12,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: Colors.white.withOpacity(0.5 + (math.sin(animValue * math.pi) * 0.5)),
+                                  color: Colors.white.withValues(alpha: 0.5 + (math.sin(animValue * math.pi) * 0.5)),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.white.withOpacity(0.3),
+                                      color: Colors.white.withValues(alpha: 0.3),
                                       blurRadius: 8,
                                       spreadRadius: 2,
                                     ),
@@ -397,7 +397,7 @@ class _SplashScreenState extends State<SplashScreen>
                       Text(
                         'Loading...',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white.withValues(alpha: 0.6),
                           fontSize: 16,
                           letterSpacing: 2,
                           fontWeight: FontWeight.w300,
@@ -417,13 +417,13 @@ class _SplashScreenState extends State<SplashScreen>
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(25),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.1),
+                                  color: Colors.white.withValues(alpha: 0.1),
                                   width: 1,
                                 ),
                                 gradient: LinearGradient(
                                   colors: [
-                                    Colors.white.withOpacity(0.05),
-                                    Colors.white.withOpacity(0.02),
+                                    Colors.white.withValues(alpha: 0.05),
+                                    Colors.white.withValues(alpha: 0.02),
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -439,7 +439,7 @@ class _SplashScreenState extends State<SplashScreen>
                                       shape: BoxShape.circle,
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.white.withOpacity(0.1),
+                                          color: Colors.white.withValues(alpha: 0.1),
                                           blurRadius: 4,
                                           spreadRadius: 0.5,
                                         ),
@@ -451,7 +451,7 @@ class _SplashScreenState extends State<SplashScreen>
                                         width: 24,
                                         height: 24,
                                         fit: BoxFit.cover,
-                                        color: Colors.white.withOpacity(0.8),
+                                        color: Colors.white.withValues(alpha: 0.8),
                                         colorBlendMode: BlendMode.modulate,
                                       ),
                                     ),
@@ -464,7 +464,7 @@ class _SplashScreenState extends State<SplashScreen>
                                           text: 'Powered by ',
                                           style: TextStyle(
                                             fontSize: 14,
-                                            color: Colors.white.withOpacity(0.7),
+                                            color: Colors.white.withValues(alpha: 0.7),
                                             letterSpacing: 1,
                                             fontWeight: FontWeight.w400,
                                             fontStyle: FontStyle.italic,
@@ -474,7 +474,7 @@ class _SplashScreenState extends State<SplashScreen>
                                           text: 'Pegas (Pvt) Ltd',
                                           style: TextStyle(
                                             fontSize: 14,
-                                            color: Colors.white.withOpacity(0.9),
+                                            color: Colors.white.withValues(alpha: 0.9),
                                             letterSpacing: 1,
                                             fontWeight: FontWeight.w700,
                                             fontStyle: FontStyle.italic,
@@ -512,7 +512,7 @@ class StarsPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.8)
+      ..color = Colors.white.withValues(alpha: 0.8)
       ..style = PaintingStyle.fill;
     
     final center = Offset(size.width / 2, size.height / 2);
@@ -530,12 +530,12 @@ class StarsPainter extends CustomPainter {
         final y = center.dy + math.sin(angle) * distance;
         
         if (x >= 0 && x <= size.width && y >= 0 && y <= size.height) {
-          paint.color = Colors.white.withOpacity(layerOpacity * (0.5 + (i % 3) * 0.25));
+          paint.color = Colors.white.withValues(alpha: layerOpacity * (0.5 + (i % 3) * 0.25));
           canvas.drawCircle(Offset(x, y), 1.5 * layerSize, paint);
           
           // Add twinkling effect
           if ((rotation * 10 + i) % 30 < 2) {
-            paint.color = Colors.white.withOpacity(layerOpacity * 0.8);
+            paint.color = Colors.white.withValues(alpha: layerOpacity * 0.8);
             canvas.drawCircle(Offset(x, y), 3 * layerSize, paint);
           }
         }
@@ -570,8 +570,8 @@ class PlanetsPainter extends CustomPainter {
         final planetPaint = Paint()
           ..shader = RadialGradient(
             colors: [
-              Colors.blue.withOpacity(0.6),
-              Colors.purple.withOpacity(0.3),
+              Colors.blue.withValues(alpha: 0.6),
+              Colors.purple.withValues(alpha: 0.3),
             ],
           ).createShader(Rect.fromCircle(center: Offset(x, y), radius: planetSize));
         
@@ -579,7 +579,7 @@ class PlanetsPainter extends CustomPainter {
         
         // Add planet glow
         final glowPaint = Paint()
-          ..color = Colors.blue.withOpacity(0.1)
+          ..color = Colors.blue.withValues(alpha: 0.1)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15);
         
         canvas.drawCircle(Offset(x, y), planetSize * 2, glowPaint);

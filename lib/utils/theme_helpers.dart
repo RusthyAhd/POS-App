@@ -12,7 +12,7 @@ class ThemeHelpers {
   static BorderSide getThemeBorder(BuildContext context, {double width = 1.0, double opacity = 0.2}) {
     return BorderSide(
       color: Theme.of(context).brightness == Brightness.dark
-          ? Colors.white.withOpacity(opacity)
+          ? Colors.white.withValues(alpha: opacity)
           : Colors.transparent,
       width: width,
     );
@@ -40,7 +40,7 @@ class ThemeHelpers {
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
         color: Theme.of(context).brightness == Brightness.dark
-            ? Colors.white.withOpacity(borderOpacity)
+            ? Colors.white.withValues(alpha: borderOpacity)
             : Colors.transparent,
         width: borderWidth,
       ),
@@ -58,11 +58,11 @@ class ThemeHelpers {
     double borderOpacity = 0.3,
   }) {
     return BoxDecoration(
-      color: baseColor.withOpacity(backgroundOpacity),
+      color: baseColor.withValues(alpha: backgroundOpacity),
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
         color: Theme.of(context).brightness == Brightness.dark
-            ? Colors.white.withOpacity(borderOpacity)
+            ? Colors.white.withValues(alpha: borderOpacity)
             : Colors.transparent,
         width: borderWidth,
       ),
@@ -71,12 +71,12 @@ class ThemeHelpers {
 
   // Get text color based on theme
   static Color? getTextColor(BuildContext context, {double opacity = 1.0}) {
-    return Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(opacity);
+    return Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: opacity);
   }
 
   // Get secondary text color based on theme
   static Color? getSecondaryTextColor(BuildContext context, {double opacity = 0.7}) {
-    return Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(opacity);
+    return Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: opacity);
   }
 
   // Get heading text color - white for dark theme, black for light theme

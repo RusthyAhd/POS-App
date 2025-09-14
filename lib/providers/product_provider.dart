@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/product.dart';
 
 class ProductProvider extends ChangeNotifier {
-  List<String> _categories = [
+  final List<String> _categories = [
     'All',
     'Anchor',
     'Kotmalee',
@@ -13,7 +13,7 @@ class ProductProvider extends ChangeNotifier {
     'Rice & Grains',
   ];
 
-  List<Product> _products = [
+  final List<Product> _products = [
     // Anchor Products
     Product(
       id: '1',

@@ -15,11 +15,13 @@ class BillingItem {
 
   String get id => product.id;
   String get name => product.name;
+  String get productName => product.name;
   String get description => product.description;
   String get category => product.category;
   String get image => product.image;
   bool get isAvailable => product.isAvailable;
   int get stock => product.stock;
+  double get total => totalPrice;
 
   BillingItem copyWith({
     Product? product,

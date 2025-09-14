@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "307020637467",
+    "project_id": "pegas-pos",
+    "storage_bucket": "pegas-pos.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:307020637467:android:d884d9a8b99a8c3e28dfbe",
+        "android_client_info": {
+          "package_name": "com.example.pos_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDOhro_BA1QqHGQL3o6lQ1Nlp5LptX3bLk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

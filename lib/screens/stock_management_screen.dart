@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/product.dart';
 import '../utils/theme_helpers.dart';
-import '../providers/product_provider.dart';
+import '../providers/firebase_product_provider.dart';
 
 class StockManagementScreen extends StatefulWidget {
   const StockManagementScreen({super.key});
@@ -27,7 +27,7 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
   }
 
   void _filterProducts() {
-    final productProvider = Provider.of<ProductProvider>(context, listen: false);
+    final productProvider = Provider.of<FirebaseProductProvider>(context, listen: false);
     setState(() {
       _filteredProducts = productProvider.products.where((product) {
         bool matchesSearch = _searchController.text.isEmpty ||
@@ -44,7 +44,7 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ProductProvider>(
+    return Consumer<FirebaseProductProvider>(
       builder: (context, productProvider, child) {
         // Update filtered products when provider changes
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -160,12 +160,12 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
             end: Alignment.bottomRight,
             colors: [
               Theme.of(context).primaryColor,
-              Theme.of(context).primaryColor.withOpacity(0.8),
+              Theme.of(context).primaryColor.withValues(alpha: 0.8),
             ],
           ),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).primaryColor.withOpacity(0.3),
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -205,23 +205,23 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
           end: Alignment.bottomRight,
           colors: isDark
               ? [
-                  Colors.white.withOpacity(0.1),
-                  Colors.white.withOpacity(0.05),
+                  Colors.white.withValues(alpha: 0.1),
+                  Colors.white.withValues(alpha: 0.05),
                 ]
               : [
-                  Colors.white.withOpacity(0.9),
-                  Colors.white.withOpacity(0.7),
+                  Colors.white.withValues(alpha: 0.9),
+                  Colors.white.withValues(alpha: 0.7),
                 ],
         ),
         border: Border.all(
           color: isDark 
-              ? Colors.white.withOpacity(0.2)
-              : Colors.grey.withOpacity(0.2),
+              ? Colors.white.withValues(alpha: 0.2)
+              : Colors.grey.withValues(alpha: 0.2),
           width: 1.0,
         ),
         boxShadow: [
           BoxShadow(
-            color: categoryColor.withOpacity(0.1),
+            color: categoryColor.withValues(alpha: 0.1),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -246,8 +246,8 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            categoryColor.withOpacity(0.8),
-                            categoryColor.withOpacity(0.6),
+                            categoryColor.withValues(alpha: 0.8),
+                            categoryColor.withValues(alpha: 0.6),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(12),
@@ -275,10 +275,10 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: categoryColor.withOpacity(0.1),
+                              color: categoryColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
-                                color: categoryColor.withOpacity(0.3),
+                                color: categoryColor.withValues(alpha: 0.3),
                                 width: 1,
                               ),
                             ),
@@ -310,11 +310,11 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: isLowStock 
-                                ? Colors.red.withOpacity(0.1) 
-                                : Colors.green.withOpacity(0.1),
+                                ? Colors.red.withValues(alpha: 0.1) 
+                                : Colors.green.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: isLowStock ? Colors.red.withOpacity(0.3) : Colors.green.withOpacity(0.3),
+                              color: isLowStock ? Colors.red.withValues(alpha: 0.3) : Colors.green.withValues(alpha: 0.3),
                               width: 1,
                             ),
                           ),
@@ -356,7 +356,7 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _buildActionButton(
-                        onPressed: () => _showDeleteConfirmation(product),
+                        onPressed: () => _showPinVerificationDialog(product),
                         icon: Icons.delete_outline,
                         label: 'Delete',
                         color: const Color(0xFFDC2626), // Red
@@ -379,7 +379,7 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
     required Color color,
   }) {
     
-    return Container(
+    return SizedBox(
       height: 42,
       child: ElevatedButton.icon(
         onPressed: onPressed,
@@ -392,12 +392,12 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
           ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: color.withOpacity(0.1),
+          backgroundColor: color.withValues(alpha: 0.1),
           foregroundColor: color,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           side: BorderSide(
-            color: color.withOpacity(0.2),
+            color: color.withValues(alpha: 0.2),
             width: 1,
           ),
           shape: RoundedRectangleBorder(
@@ -409,18 +409,22 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
   }
 
   Widget _buildEmptyState() {
+    final productProvider = Provider.of<FirebaseProductProvider>(context, listen: false);
+    final hasProducts = productProvider.products.isNotEmpty;
+    final isFiltered = _selectedCategory != 'All' || _searchController.text.isNotEmpty;
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.inventory_2_outlined,
+            hasProducts ? Icons.search_off : Icons.inventory_2_outlined,
             size: 80,
             color: Colors.grey[400],
           ),
           const SizedBox(height: 16),
           Text(
-            'No Products Found',
+            hasProducts && isFiltered ? 'No Products Found' : 'No Products Available',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -429,7 +433,9 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'No products match your current filters',
+            hasProducts && isFiltered 
+                ? 'No products match your current filters'
+                : 'Add your first product to get started',
             style: TextStyle(color: Colors.grey[500]),
           ),
         ],
@@ -453,8 +459,8 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
             color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white.withOpacity(0.2)
-                : Colors.grey.withOpacity(0.2),
+                ? Colors.white.withValues(alpha: 0.2)
+                : Colors.grey.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -463,7 +469,7 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: actionColor.withOpacity(0.1),
+                color: actionColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -505,10 +511,10 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: Theme.of(context).primaryColor.withOpacity(0.3),
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -540,7 +546,7 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
                 hintText: 'Enter quantity to add',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                  borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -549,8 +555,8 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
                 prefixIcon: Icon(actionIcon, color: actionColor),
                 filled: true,
                 fillColor: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.grey.withOpacity(0.05),
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.grey.withValues(alpha: 0.05),
               ),
               autofocus: true,
             ),
@@ -590,7 +596,7 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
   }
 
   void _updateStock(Product product, String type, int quantity) {
-    final productProvider = Provider.of<ProductProvider>(context, listen: false);
+    final productProvider = Provider.of<FirebaseProductProvider>(context, listen: false);
     final oldStock = product.stock;
     int newStock = oldStock + quantity; // Only adding stock now
 
@@ -611,6 +617,193 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
     );
   }
 
+  void _showPinVerificationDialog(Product product) {
+    final pinController = TextEditingController();
+    bool isError = false;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? Colors.grey[900]
+              : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withValues(alpha: 0.2)
+                  : Colors.grey.withValues(alpha: 0.2),
+              width: 1,
+            ),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.security,
+                  color: Color(0xFF2563EB),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'PIN Verification Required',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: ThemeHelpers.getPrimaryTextColor(context),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDC2626).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFFDC2626).withValues(alpha: 0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Color(0xFFDC2626),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Deleting products requires PIN verification',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFFDC2626).withAlpha(200),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Enter PIN to delete "${product.name}":',
+                style: TextStyle(
+                  color: ThemeHelpers.getPrimaryTextColor(context),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: pinController,
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 8,
+                ),
+                decoration: InputDecoration(
+                  counterText: '',
+                  hintText: '••••',
+                  hintStyle: TextStyle(
+                    color: Colors.grey[400],
+                    letterSpacing: 8,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: isError ? Colors.red : Colors.grey[300]!,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: isError ? Colors.red : const Color(0xFF2563EB),
+                      width: 2,
+                    ),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Colors.red, width: 2),
+                  ),
+                  fillColor: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey[800]
+                      : Colors.grey[50],
+                  filled: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                onChanged: (value) {
+                  if (isError && value.isNotEmpty) {
+                    setState(() => isError = false);
+                  }
+                },
+              ),
+              if (isError) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Incorrect PIN. Please try again.',
+                  style: TextStyle(
+                    color: Colors.red[600],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey[600],
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              ),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                if (pinController.text == '0112') {
+                  Navigator.pop(context);
+                  _showDeleteConfirmation(product);
+                } else {
+                  setState(() => isError = true);
+                  pinController.clear();
+                }
+              },
+              icon: const Icon(Icons.verified_user, size: 18),
+              label: const Text('Verify'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2563EB),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showDeleteConfirmation(Product product) {
     showDialog(
       context: context,
@@ -622,8 +815,8 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
             color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white.withOpacity(0.2)
-                : Colors.grey.withOpacity(0.2),
+                ? Colors.white.withValues(alpha: 0.2)
+                : Colors.grey.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -632,7 +825,7 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFDC2626).withOpacity(0.1),
+                color: const Color(0xFFDC2626).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
@@ -659,10 +852,10 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFDC2626).withOpacity(0.1),
+                color: const Color(0xFFDC2626).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: const Color(0xFFDC2626).withOpacity(0.3),
+                  color: const Color(0xFFDC2626).withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -737,7 +930,7 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
   }
 
   void _deleteProduct(Product product) {
-    final productProvider = Provider.of<ProductProvider>(context, listen: false);
+    final productProvider = Provider.of<FirebaseProductProvider>(context, listen: false);
     productProvider.deleteProduct(product.id);
     _filterProducts();
 
@@ -799,197 +992,156 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
 
 
   void _showAddProductDialog() {
-    final productProvider = Provider.of<ProductProvider>(context, listen: false);
-    final nameController = TextEditingController();
-    final priceController = TextEditingController();
-    final stockController = TextEditingController();
-    String selectedCategory = productProvider.categories[1]; // Skip 'All'
+    _showProductDialog();
+  }
+
+  void _showProductDialog({Product? product}) {
+    final isEditing = product != null;
+    final productProvider = Provider.of<FirebaseProductProvider>(context, listen: false);
+    final nameController = TextEditingController(text: product?.name ?? '');
+    final priceController = TextEditingController(text: product?.price.toString() ?? '');
+    final stockController = TextEditingController(text: product?.stock.toString() ?? '');
+    final descriptionController = TextEditingController(text: product?.description ?? '');
+    
+    // Get available categories (excluding 'All')
+    List<String> availableCategories = productProvider.categories.where((cat) => cat != 'All').toList();
+    String selectedCategory = isEditing 
+        ? product.category 
+        : (availableCategories.isNotEmpty ? availableCategories.first : '');
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          backgroundColor: Theme.of(context).brightness == Brightness.dark
-              ? Colors.grey[900]
-              : Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white.withOpacity(0.2)
-                  : Colors.grey.withOpacity(0.2),
-              width: 1,
-            ),
-          ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Theme.of(context).primaryColor.withOpacity(0.8),
-                      Theme.of(context).primaryColor.withOpacity(0.6),
+        builder: (context, setState) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            padding: const EdgeInsets.all(24),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        isEditing ? Icons.edit : Icons.add_shopping_cart,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        isEditing ? 'Edit Product' : 'Add New Product',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.add_shopping_cart,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Add New Product',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: ThemeHelpers.getPrimaryTextColor(context),
-                ),
-              ),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildTextField(
-                  controller: nameController,
-                  label: 'Product Name',
-                  icon: Icons.inventory_2,
-                  hint: 'Enter product name',
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: priceController,
-                  label: 'Price (Rs.)',
-                  icon: Icons.attach_money,
-                  hint: 'Enter price',
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: stockController,
-                  label: 'Initial Stock',
-                  icon: Icons.inventory,
-                  hint: 'Enter stock quantity',
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                    borderRadius: BorderRadius.circular(12),
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white.withOpacity(0.05)
-                        : Colors.grey.withOpacity(0.05),
+                  const SizedBox(height: 24),
+                  
+                  _buildTextField(
+                    controller: nameController,
+                    label: 'Product Name',
+                    icon: Icons.inventory_2,
+                    hint: 'Enter product name',
+                    required: true,
                   ),
-                  child: DropdownButtonFormField<String>(
-                    value: selectedCategory,
-                    onChanged: (value) {
-                      if (value == 'add_new_category') {
-                        _showAddCategoryDialog(context, (newCategory) {
-                          setState(() {
-                            selectedCategory = newCategory;
-                          });
-                        });
-                      } else {
-                        setState(() => selectedCategory = value!);
-                      }
+                  const SizedBox(height: 16),
+                  
+                  _buildTextField(
+                    controller: descriptionController,
+                    label: 'Description (Optional)',
+                    icon: Icons.description,
+                    hint: 'Enter product description',
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  _buildTextField(
+                    controller: priceController,
+                    label: 'Price (Rs.)',
+                    icon: Icons.attach_money,
+                    hint: 'Enter price',
+                    keyboardType: TextInputType.number,
+                    required: true,
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  _buildTextField(
+                    controller: stockController,
+                    label: 'Initial Stock',
+                    icon: Icons.inventory,
+                    hint: 'Enter stock quantity',
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    required: true,
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Category Selection (similar to Area in customer)
+                  _buildCategoryField(
+                    selectedCategory: selectedCategory,
+                    availableCategories: availableCategories,
+                    onCategoryChanged: (String category) {
+                      setState(() {
+                        selectedCategory = category;
+                      });
                     },
-                    decoration: InputDecoration(
-                      labelText: 'Category',
-                      prefixIcon: Icon(
-                        _getCategoryIcon(selectedCategory),
-                        color: _getCategoryColor(selectedCategory),
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    ),
-                    items: [
-                      ...productProvider.categories.skip(1).map((category) => 
-                        DropdownMenuItem(
-                          value: category,
-                          child: Row(
-                            children: [
-                              Icon(
-                                _getCategoryIcon(category),
-                                color: _getCategoryColor(category),
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(category),
-                            ],
-                          ),
+                    onAddNewCategory: () {
+                      _showAddCategoryDialog(context, (newCategory) {
+                        setState(() {
+                          selectedCategory = newCategory;
+                        });
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 32),
+                  
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Cancel'),
                         ),
                       ),
-                      const DropdownMenuItem(
-                        value: 'add_new_category',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.add_circle_outline,
-                              color: Color(0xFF1E3A8A),
-                              size: 20,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            if (_validateProductForm([nameController, priceController, stockController]) &&
+                                selectedCategory.isNotEmpty) {
+                              await _saveProduct(
+                                product: product,
+                                name: nameController.text,
+                                description: descriptionController.text,
+                                price: double.parse(priceController.text),
+                                category: selectedCategory,
+                                stock: int.parse(stockController.text),
+                              );
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                              }
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            SizedBox(width: 8),
-                            Text(
-                              'Add New Category',
-                              style: TextStyle(
-                                color: Color(0xFF1E3A8A),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                          ),
+                          child: Text(isEditing ? 'Update' : 'Add'),
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.grey[600],
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              ),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton.icon(
-              onPressed: () {
-                if (nameController.text.isNotEmpty && 
-                    priceController.text.isNotEmpty && 
-                    stockController.text.isNotEmpty) {
-                  _addProduct(
-                    productProvider,
-                    nameController.text, 
-                    double.parse(priceController.text), 
-                    selectedCategory, 
-                    int.parse(stockController.text)
-                  );
-                  Navigator.pop(context);
-                }
-              },
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('Add Product'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -999,21 +1151,22 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
     required TextEditingController controller,
     required String label,
     required IconData icon,
-    required String hint,
+    String? hint,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
+    bool required = false,
   }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
+        labelText: required ? '$label *' : label,
+        hintText: hint ?? 'Enter $label',
         prefixIcon: Icon(icon, color: Theme.of(context).primaryColor),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -1021,14 +1174,110 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
         ),
         filled: true,
         fillColor: Theme.of(context).brightness == Brightness.dark
-            ? Colors.white.withOpacity(0.05)
-            : Colors.grey.withOpacity(0.05),
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.grey.withValues(alpha: 0.05),
       ),
     );
   }
 
+  Widget _buildCategoryField({
+    required String selectedCategory,
+    required List<String> availableCategories,
+    required Function(String) onCategoryChanged,
+    required VoidCallback onAddNewCategory,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.grey.withValues(alpha: 0.05),
+      ),
+      child: DropdownButtonFormField<String>(
+        value: selectedCategory.isNotEmpty ? selectedCategory : null,
+        onChanged: (value) {
+          if (value == 'add_new_category') {
+            onAddNewCategory();
+          } else if (value != null) {
+            onCategoryChanged(value);
+          }
+        },
+        decoration: InputDecoration(
+          labelText: 'Category *',
+          prefixIcon: Icon(
+            selectedCategory.isNotEmpty ? _getCategoryIcon(selectedCategory) : Icons.category,
+            color: selectedCategory.isNotEmpty ? _getCategoryColor(selectedCategory) : Theme.of(context).primaryColor,
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+        items: [
+          // Available categories
+          ...availableCategories.map((category) => 
+            DropdownMenuItem(
+              value: category,
+              child: Row(
+                children: [
+                  Icon(
+                    _getCategoryIcon(category),
+                    color: _getCategoryColor(category),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(category),
+                ],
+              ),
+            ),
+          ),
+          // Add new category option
+          const DropdownMenuItem(
+            value: 'add_new_category',
+            child: Row(
+              children: [
+                Icon(
+                  Icons.add_circle_outline,
+                  color: Color(0xFF1E3A8A),
+                  size: 20,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Create New Category',
+                  style: TextStyle(
+                    color: Color(0xFF1E3A8A),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _validateProductForm(List<TextEditingController> controllers) {
+    for (var controller in controllers) {
+      if (controller.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Please fill in all required fields'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+        return false;
+      }
+    }
+    return true;
+  }
+
   void _showAddCategoryDialog(BuildContext context, Function(String) onCategoryAdded) {
-    final productProvider = Provider.of<ProductProvider>(context, listen: false);
+    final productProvider = Provider.of<FirebaseProductProvider>(context, listen: false);
     final categoryController = TextEditingController();
     
     showDialog(
@@ -1041,8 +1290,8 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
             color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white.withOpacity(0.2)
-                : Colors.grey.withOpacity(0.2),
+                ? Colors.white.withValues(alpha: 0.2)
+                : Colors.grey.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -1051,7 +1300,7 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
@@ -1085,7 +1334,7 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                  borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -1093,8 +1342,8 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
                 ),
                 filled: true,
                 fillColor: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.grey.withOpacity(0.05),
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.grey.withValues(alpha: 0.05),
               ),
               autofocus: true,
               textCapitalization: TextCapitalization.words,
@@ -1165,31 +1414,69 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
     );
   }
 
-  void _addProduct(ProductProvider productProvider, String name, double price, String category, int stock) {
-    final newProduct = Product(
-      id: productProvider.generateProductId(),
-      name: name,
-      description: '',
-      price: price,
-      category: category,
-      image: '',
-      stock: stock,
-    );
-
-    productProvider.addProduct(newProduct);
-    _filterProducts();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$name added successfully'),
-        backgroundColor: const Color(0xFF1E3A8A),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+  Future<void> _saveProduct({
+    Product? product,
+    required String name,
+    required String description,
+    required double price,
+    required String category,
+    required int stock,
+  }) async {
+    final productProvider = Provider.of<FirebaseProductProvider>(context, listen: false);
+    
+    try {
+      if (product != null) {
+        // Edit existing product
+        final updatedProduct = product.copyWith(
+          name: name,
+          description: description,
+          price: price,
+          category: category,
+          stock: stock,
+        );
+        await productProvider.updateProduct(updatedProduct);
+      } else {
+        // Add new product
+        final newProduct = Product(
+          id: '', // Firebase will generate the ID
+          name: name,
+          description: description,
+          price: price,
+          category: category,
+          image: '',
+          stock: stock,
+        );
+        await productProvider.addProduct(newProduct);
+      }
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(product != null ? 'Product updated successfully' : 'Product added successfully'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to ${product != null ? 'update' : 'add'} product: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+          ),
+          margin: const EdgeInsets.all(16),
         ),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
+      );
+      }
+    }
   }
 
 

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/bill.dart';
-import '../models/customer.dart';
 import '../models/product.dart';
 import '../models/billing_item.dart';
+import '../providers/firebase_bill_provider.dart';
 import '../utils/theme_helpers.dart';
 
 class BillHistoryScreen extends StatefulWidget {
@@ -26,10 +27,19 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
     _loadBillHistory();
   }
 
-  void _loadBillHistory() {
-    // Sample bill data - In a real app, this would come from a database
-    _bills = _generateSampleBills();
-    _filteredBills = _bills;
+  void _loadBillHistory() async {
+    try {
+      final billProvider = Provider.of<FirebaseBillProvider>(context, listen: false);
+      await billProvider.loadBills();
+      setState(() {
+        _bills = billProvider.bills;
+        _filteredBills = _bills;
+      });
+    } catch (e) {
+      // Fallback to sample data if Firebase fails
+      _bills = _generateSampleBills();
+      _filteredBills = _bills;
+    }
   }
 
   List<Bill> _generateSampleBills() {
@@ -39,16 +49,16 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
     
     for (int i = 0; i < 20; i++) {
       final billDate = now.subtract(Duration(days: i));
+      final subtotal = (100.0 + (i * 10)) * (1 + (i % 3));
+      final discount = i % 4 == 0 ? subtotal * 0.1 : 0.0;
+      final totalAmount = subtotal - discount;
+      
       sampleBills.add(
         Bill(
           id: 'BILL${1000 + i}',
-          date: billDate,
-          customer: i % 3 == 0 ? Customer(
-            id: 'CUST$i',
-            shopName: 'Customer ${i + 1}',
-            phone: '+94 ${7000000000 + i}',
-            area: 'Area ${i % 3 + 1}',
-          ) : null,
+          billNumber: 'BILL-${1000 + i}',
+          customerName: i % 3 == 0 ? 'Customer ${i + 1}' : 'Walk-in Customer',
+          customerPhone: i % 3 == 0 ? '+94 ${7000000000 + i}' : '',
           items: [
             BillingItem(
               product: Product(
@@ -63,13 +73,12 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
               price: 100.0 + (i * 10),
             ),
           ],
-          subtotal: (100.0 + (i * 10)) * (1 + (i % 3)),
-          discountPercentage: i % 4 == 0 ? 10.0 : 0.0,
-          discountAmount: i % 4 == 0 ? ((100.0 + (i * 10)) * (1 + (i % 3))) * 0.1 : 0.0,
-          total: i % 4 == 0 
-              ? ((100.0 + (i * 10)) * (1 + (i % 3))) * 0.9 
-              : (100.0 + (i * 10)) * (1 + (i % 3)),
+          subtotal: subtotal,
+          discount: discount,
+          tax: 0.0,
+          totalAmount: totalAmount,
           paymentMethod: i % 2 == 0 ? 'Cash' : 'Card',
+          timestamp: billDate,
         ),
       );
     }
@@ -81,8 +90,8 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
     setState(() {
       _filteredBills = _bills.where((bill) {
         bool matchesSearch = _searchController.text.isEmpty ||
-            bill.id.toLowerCase().contains(_searchController.text.toLowerCase()) ||
-            (bill.customer?.shopName.toLowerCase().contains(_searchController.text.toLowerCase()) ?? false);
+            (bill.id ?? '').toLowerCase().contains(_searchController.text.toLowerCase()) ||
+            (bill.customer?.shopName ?? '').toLowerCase().contains(_searchController.text.toLowerCase());
 
         bool matchesDate = _selectedDate == null ||
             (bill.date.year == _selectedDate!.year &&
@@ -117,20 +126,22 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
+    return Consumer<FirebaseBillProvider>(
+      builder: (context, billProvider, child) {
+        return Scaffold(
+          appBar: AppBar(
         title: Text(
-          'Bill History',
+          'Customer Sales History',
           style: Theme.of(context).appBarTheme.titleTextStyle,
         ),
-        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-        foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
-        iconTheme: Theme.of(context).appBarTheme.iconTheme,
-        elevation: 0,
-      ),
-      body: SafeArea(
-        child: Column(
-        children: [
+            backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+            foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
+            iconTheme: Theme.of(context).appBarTheme.iconTheme,
+            elevation: 0,
+          ),
+          body: SafeArea(
+            child: Column(
+              children: [
           // Search and Filter Section
           Container(
             padding: const EdgeInsets.all(16),
@@ -230,9 +241,11 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                     },
                   ),
           ),
-        ],
-        ),
-      ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -244,7 +257,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
           color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.white.withOpacity(0.2)
+              ? Colors.white.withValues(alpha: 0.2)
               : Colors.transparent,
           width: 1,
         ),
@@ -261,7 +274,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    bill.id,
+                    bill.id ?? 'Unknown',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -428,7 +441,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        bill.id,
+                        bill.id ?? 'Unknown',
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -543,7 +556,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                         ),
                       ],
                     ),
-                  )).toList(),
+                  )),
                   
                   const SizedBox(height: 20),
                   
@@ -551,7 +564,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(

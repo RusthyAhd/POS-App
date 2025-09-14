@@ -2,41 +2,61 @@ import 'customer.dart';
 import 'billing_item.dart';
 
 class Bill {
-  final String id;
-  final DateTime date;
-  final Customer? customer;
+  String? id;
+  final String billNumber;
+  final String customerName;
+  final String customerPhone;
   final List<BillingItem> items;
   final double subtotal;
-  final double discountAmount;
-  final double discountPercentage;
-  final double total;
+  final double discount;
+  final double tax;
+  final double totalAmount;
   final String paymentMethod;
+  final DateTime timestamp;
   final String status; // 'completed', 'pending', 'cancelled'
 
+  // Legacy fields for compatibility
+  DateTime get date => timestamp;
+  Customer? get customer => customerPhone.isNotEmpty 
+      ? Customer(
+          id: customerPhone,
+          shopName: customerName,
+          phone: customerPhone,
+          area: '',
+        ) 
+      : null;
+  double get total => totalAmount;
+  double get discountAmount => discount;
+  double get discountPercentage => subtotal > 0 ? (discount / subtotal) * 100 : 0;
+
   Bill({
-    required this.id,
-    required this.date,
-    this.customer,
+    this.id,
+    required this.billNumber,
+    required this.customerName,
+    required this.customerPhone,
     required this.items,
     required this.subtotal,
-    this.discountAmount = 0.0,
-    this.discountPercentage = 0.0,
-    required this.total,
-    this.paymentMethod = 'cash',
+    this.discount = 0.0,
+    this.tax = 0.0,
+    required this.totalAmount,
+    this.paymentMethod = 'Cash',
+    required this.timestamp,
     this.status = 'completed',
   });
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'date': date.toIso8601String(),
-      'customer': customer?.toJson(),
+      'billNumber': billNumber,
+      'customerName': customerName,
+      'customerPhone': customerPhone,
       'items': items.map((item) => item.toJson()).toList(),
       'subtotal': subtotal,
-      'discountAmount': discountAmount,
-      'discountPercentage': discountPercentage,
-      'total': total,
+      'discount': discount,
+      'tax': tax,
+      'totalAmount': totalAmount,
       'paymentMethod': paymentMethod,
+      'timestamp': timestamp.toIso8601String(),
       'status': status,
     };
   }
@@ -44,14 +64,16 @@ class Bill {
   factory Bill.fromJson(Map<String, dynamic> json) {
     return Bill(
       id: json['id'],
-      date: DateTime.parse(json['date']),
-      customer: json['customer'] != null ? Customer.fromJson(json['customer']) : null,
-      items: (json['items'] as List).map((item) => BillingItem.fromJson(item)).toList(),
-      subtotal: json['subtotal'].toDouble(),
-      discountAmount: json['discountAmount']?.toDouble() ?? 0.0,
-      discountPercentage: json['discountPercentage']?.toDouble() ?? 0.0,
-      total: json['total'].toDouble(),
-      paymentMethod: json['paymentMethod'] ?? 'cash',
+      billNumber: json['billNumber'] ?? '',
+      customerName: json['customerName'] ?? '',
+      customerPhone: json['customerPhone'] ?? '',
+      items: (json['items'] as List? ?? []).map((item) => BillingItem.fromJson(item)).toList(),
+      subtotal: (json['subtotal'] ?? 0.0).toDouble(),
+      discount: (json['discount'] ?? 0.0).toDouble(),
+      tax: (json['tax'] ?? 0.0).toDouble(),
+      totalAmount: (json['totalAmount'] ?? 0.0).toDouble(),
+      paymentMethod: json['paymentMethod'] ?? 'Cash',
+      timestamp: json['timestamp'] != null ? DateTime.parse(json['timestamp']) : DateTime.now(),
       status: json['status'] ?? 'completed',
     );
   }

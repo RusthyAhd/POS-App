@@ -4,8 +4,7 @@ import '../providers/theme_provider.dart';
 import '../screens/bill_history_screen.dart';
 import '../screens/stock_management_screen.dart';
 import '../screens/customer_management_screen.dart';
-import '../screens/reports_screen.dart';
-import '../screens/settings_screen.dart';
+import '../screens/settings_screen_fixed.dart';
 
 class SlidingMenu extends StatelessWidget {
   const SlidingMenu({super.key});
@@ -20,7 +19,7 @@ class SlidingMenu extends StatelessWidget {
             end: Alignment.bottomCenter,
             colors: [
               Theme.of(context).primaryColor,
-              Theme.of(context).primaryColor.withOpacity(0.8),
+              Theme.of(context).primaryColor.withValues(alpha: 0.8),
             ],
           ),
         ),
@@ -52,7 +51,7 @@ class SlidingMenu extends StatelessWidget {
                   Text(
                     'Professional Point of Sale',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withValues(alpha: 0.8),
                       fontSize: 14,
                     ),
                   ),
@@ -109,18 +108,6 @@ class SlidingMenu extends StatelessWidget {
                       );
                     },
                   ),
-                  _buildMenuItem(
-                    context,
-                    icon: Icons.analytics_rounded,
-                    title: 'Report',
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const ReportsScreen()),
-                      );
-                    },
-                  ),
                   
                   const Divider(color: Colors.white24),
                   
@@ -153,7 +140,7 @@ class SlidingMenu extends StatelessWidget {
               child: Text(
                 'Version 1.0.0',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha: 0.6),
                   fontSize: 12,
                 ),
               ),
@@ -195,10 +182,10 @@ class SlidingMenu extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -207,7 +194,7 @@ class SlidingMenu extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -234,7 +221,7 @@ class SlidingMenu extends StatelessWidget {
                 Text(
                   themeProvider.isDarkMode ? 'Dark' : 'Light',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 12,
                   ),
                 ),
@@ -245,11 +232,11 @@ class SlidingMenu extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               color: themeProvider.isDarkMode 
-                ? Colors.white.withOpacity(0.3) 
-                : Colors.white.withOpacity(0.2),
+                ? Colors.white.withValues(alpha: 0.3) 
+                : Colors.white.withValues(alpha: 0.2),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -266,8 +253,8 @@ class SlidingMenu extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   color: themeProvider.isDarkMode 
-                    ? Colors.white.withOpacity(0.3) 
-                    : Colors.white.withOpacity(0.2),
+                    ? Colors.white.withValues(alpha: 0.3) 
+                    : Colors.white.withValues(alpha: 0.2),
                 ),
                 child: Stack(
                   children: [
@@ -284,7 +271,7 @@ class SlidingMenu extends StatelessWidget {
                           color: Colors.white,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
+                              color: Colors.black.withValues(alpha: 0.2),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),

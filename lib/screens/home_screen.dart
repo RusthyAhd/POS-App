@@ -6,7 +6,7 @@ import '../models/product.dart';
 import '../models/billing_item.dart';
 import '../widgets/sliding_menu.dart';
 import '../utils/theme_helpers.dart';
-import '../providers/product_provider.dart';
+import '../providers/firebase_product_provider.dart';
 import 'bill_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -21,7 +21,7 @@ class _HomeScreenState extends State<HomeScreen>
   TabController? _tabController;
   final TextEditingController _searchController = TextEditingController();
   String _selectedCategory = 'All';
-  List<BillingItem> _billingItems = [];
+  final List<BillingItem> _billingItems = [];
   int _currentCategoriesLength = 0;
   bool _isDisposing = false;
 
@@ -40,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen>
     if (_isDisposing) return;
     
     try {
-      final productProvider = Provider.of<ProductProvider>(context, listen: false);
+      final productProvider = Provider.of<FirebaseProductProvider>(context, listen: false);
       if (_currentCategoriesLength != productProvider.categories.length) {
         // Safely dispose old controller
         if (_tabController != null) {
@@ -52,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen>
       }
     } catch (e) {
       // Handle any errors during initialization
-      print('Error initializing TabController: $e');
+      debugPrint('Error initializing TabController: $e');
     }
   }
 
@@ -136,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ProductProvider>(
+    return Consumer<FirebaseProductProvider>(
       builder: (context, productProvider, child) {
         final filteredProducts = productProvider.getFilteredProducts(_selectedCategory, _searchController.text);
         
@@ -168,12 +168,12 @@ class _HomeScreenState extends State<HomeScreen>
                   margin: const EdgeInsets.only(bottom: 16),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white.withOpacity(0.2)
-                          : Theme.of(context).primaryColor.withOpacity(0.3),
+                          ? Colors.white.withValues(alpha: 0.2)
+                          : Theme.of(context).primaryColor.withValues(alpha: 0.3),
                       width: 1.5,
                     ),
                   ),
@@ -228,13 +228,13 @@ class _HomeScreenState extends State<HomeScreen>
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: Theme.of(context).brightness == Brightness.dark
-                                        ? Colors.white.withOpacity(0.1)
+                                        ? Colors.white.withValues(alpha: 0.1)
                                         : Colors.transparent,
                                     width: 1,
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Theme.of(context).shadowColor.withOpacity(0.1),
+                                      color: Theme.of(context).shadowColor.withValues(alpha: 0.1),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
                                     ),
@@ -309,11 +309,11 @@ class _HomeScreenState extends State<HomeScreen>
                                           child: Container(
                                             padding: const EdgeInsets.all(6),
                                             decoration: BoxDecoration(
-                                              color: Colors.blue.withOpacity(0.1),
+                                              color: Colors.blue.withValues(alpha: 0.1),
                                               borderRadius: BorderRadius.circular(6),
                                               border: Border.all(
                                                 color: Theme.of(context).brightness == Brightness.dark
-                                                    ? Colors.white.withOpacity(0.3)
+                                                    ? Colors.white.withValues(alpha: 0.3)
                                                     : Colors.transparent,
                                                 width: 1,
                                               ),
@@ -331,11 +331,11 @@ class _HomeScreenState extends State<HomeScreen>
                                           child: Container(
                                             padding: const EdgeInsets.all(6),
                                             decoration: BoxDecoration(
-                                              color: Colors.red.withOpacity(0.1),
+                                              color: Colors.red.withValues(alpha: 0.1),
                                               borderRadius: BorderRadius.circular(6),
                                               border: Border.all(
                                                 color: Theme.of(context).brightness == Brightness.dark
-                                                    ? Colors.white.withOpacity(0.3)
+                                                    ? Colors.white.withValues(alpha: 0.3)
                                                     : Colors.transparent,
                                                 width: 1,
                                               ),
@@ -440,8 +440,8 @@ class _HomeScreenState extends State<HomeScreen>
       ),
       floatingActionButton: _billingItems.isNotEmpty 
           ? FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.push(
+              onPressed: () async {
+                final result = await Navigator.push<bool>(
                   context,
                   MaterialPageRoute(
                     builder: (context) => BillDetailsScreen(
@@ -450,6 +450,13 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                   ),
                 );
+                
+                // Clear billing items if bill was saved/shared
+                if (result == true && mounted) {
+                  setState(() {
+                    _billingItems.clear();
+                  });
+                }
               },
               backgroundColor: Theme.of(context).primaryColor,
               foregroundColor: Colors.white,
@@ -476,28 +483,28 @@ class _HomeScreenState extends State<HomeScreen>
           end: Alignment.bottomRight,
           colors: isDark
               ? [
-                  Colors.white.withOpacity(0.1),
-                  Colors.white.withOpacity(0.05),
+                  Colors.white.withValues(alpha: 0.1),
+                  Colors.white.withValues(alpha: 0.05),
                 ]
               : [
-                  Colors.white.withOpacity(0.7),
-                  Colors.white.withOpacity(0.3),
+                  Colors.white.withValues(alpha: 0.7),
+                  Colors.white.withValues(alpha: 0.3),
                 ],
         ),
         border: Border.all(
           color: Theme.of(context).brightness == Brightness.dark 
-              ? Colors.white.withOpacity(0.2)
-              : Colors.white.withOpacity(0.2),
+              ? Colors.white.withValues(alpha: 0.2)
+              : Colors.white.withValues(alpha: 0.2),
           width: Theme.of(context).brightness == Brightness.dark ? 2.0 : 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: categoryColor.withOpacity(0.1),
+            color: categoryColor.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: Theme.of(context).shadowColor.withOpacity(0.05),
+            color: Theme.of(context).shadowColor.withValues(alpha: 0.05),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -559,13 +566,13 @@ class _HomeScreenState extends State<HomeScreen>
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            categoryColor.withOpacity(0.8),
-                            categoryColor.withOpacity(0.6),
+                            categoryColor.withValues(alpha: 0.8),
+                            categoryColor.withValues(alpha: 0.6),
                           ],
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: categoryColor.withOpacity(0.3),
+                            color: categoryColor.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
@@ -582,8 +589,8 @@ class _HomeScreenState extends State<HomeScreen>
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                   colors: [
-                                    Colors.white.withOpacity(0.2),
-                                    Colors.white.withOpacity(0.1),
+                                    Colors.white.withValues(alpha: 0.2),
+                                    Colors.white.withValues(alpha: 0.1),
                                   ],
                                 ),
                               ),
@@ -595,9 +602,9 @@ class _HomeScreenState extends State<HomeScreen>
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Colors.white.withOpacity(isDark ? 0.1 : 0.2),
+                                color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.2),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(isDark ? 0.2 : 0.3),
+                                  color: Colors.white.withValues(alpha: isDark ? 0.2 : 0.3),
                                   width: 1,
                                 ),
                               ),
@@ -619,8 +626,8 @@ class _HomeScreenState extends State<HomeScreen>
                                 shape: BoxShape.circle,
                                 gradient: RadialGradient(
                                   colors: [
-                                    Colors.white.withOpacity(isDark ? 0.3 : 0.6),
-                                    Colors.white.withOpacity(0.0),
+                                    Colors.white.withValues(alpha: isDark ? 0.3 : 0.6),
+                                    Colors.white.withValues(alpha: 0.0),
                                   ],
                                 ),
                               ),
@@ -668,12 +675,12 @@ class _HomeScreenState extends State<HomeScreen>
                                 borderRadius: BorderRadius.circular(8),
                                 gradient: LinearGradient(
                                   colors: [
-                                    categoryColor.withOpacity(0.1),
-                                    categoryColor.withOpacity(0.05),
+                                    categoryColor.withValues(alpha: 0.1),
+                                    categoryColor.withValues(alpha: 0.05),
                                   ],
                                 ),
                                 border: Border.all(
-                                  color: categoryColor.withOpacity(0.2),
+                                  color: categoryColor.withValues(alpha: 0.2),
                                   width: 1,
                                 ),
                               ),
@@ -696,12 +703,12 @@ class _HomeScreenState extends State<HomeScreen>
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(6),
                                 color: product.stock > 10
-                                    ? Colors.green.withOpacity(0.15)
-                                    : Colors.orange.withOpacity(0.15),
+                                    ? Colors.green.withValues(alpha: 0.15)
+                                    : Colors.orange.withValues(alpha: 0.15),
                                 border: Border.all(
                                   color: product.stock > 10
-                                      ? Colors.green.withOpacity(0.3)
-                                      : Colors.orange.withOpacity(0.3),
+                                      ? Colors.green.withValues(alpha: 0.3)
+                                      : Colors.orange.withValues(alpha: 0.3),
                                   width: 1,
                                 ),
                               ),
@@ -808,7 +815,7 @@ class _HomeScreenState extends State<HomeScreen>
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          _getCategoryColor(product.category).withOpacity(0.8),
+                          _getCategoryColor(product.category).withValues(alpha: 0.8),
                           _getCategoryColor(product.category),
                         ],
                       ),
@@ -1013,7 +1020,7 @@ class _HomeScreenState extends State<HomeScreen>
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white.withOpacity(0.2)
+                        ? Colors.white.withValues(alpha: 0.2)
                         : Colors.transparent,
                     width: 1,
                   ),
@@ -1085,10 +1092,10 @@ class _HomeScreenState extends State<HomeScreen>
                       return Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withOpacity(0.1),
+                          color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: Theme.of(context).primaryColor.withOpacity(0.3),
+                            color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
                           ),
                         ),
                         child: Row(

@@ -13,6 +13,9 @@ class Customer {
     DateTime? dateAdded,
   }) : dateAdded = dateAdded ?? DateTime.now();
 
+  // Getter for compatibility
+  String get name => shopName;
+
   factory Customer.fromJson(Map<String, dynamic> json) {
     return Customer(
       id: json['id'],
@@ -47,5 +50,27 @@ class Customer {
       area: area ?? this.area,
       dateAdded: dateAdded,
     );
+  }
+
+  // Firebase methods
+  factory Customer.fromFirestore(Map<String, dynamic> data, String documentId) {
+    return Customer(
+      id: documentId,
+      shopName: data['shopName'] ?? '',
+      phone: data['phone'] ?? '',
+      area: data['area'] ?? '',
+      dateAdded: data['dateAdded'] != null 
+          ? DateTime.fromMillisecondsSinceEpoch(data['dateAdded'])
+          : DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'shopName': shopName,
+      'phone': phone,
+      'area': area,
+      'dateAdded': dateAdded.millisecondsSinceEpoch,
+    };
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/customer.dart';
+import '../providers/firebase_customer_provider.dart';
 
 class CustomerManagementScreen extends StatefulWidget {
   const CustomerManagementScreen({super.key});
@@ -9,50 +11,19 @@ class CustomerManagementScreen extends StatefulWidget {
 }
 
 class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
-  List<Customer> _customers = [];
   final TextEditingController _searchController = TextEditingController();
   String _selectedArea = 'All';
 
-  @override
-  void initState() {
-    super.initState();
-    _loadCustomers();
-  }
 
-  void _loadCustomers() {
-    _customers = _generateSampleCustomers();
-  }
 
-  List<Customer> _generateSampleCustomers() {
-    final areas = ['Colombo 01', 'Colombo 02', 'Colombo 03', 'Colombo 04', 'Colombo 05', 'Gampaha', 'Kandy', 'Galle'];
-    final shopNames = [
-      'Super Market Lanka', 'City Mart', 'Fresh Foods', 'Green Valley Store',
-      'Quick Shop', 'Family Store', 'Corner Shop', 'Daily Needs', 'Express Mart',
-      'Royal Store', 'Golden Shop', 'Prime Market', 'Best Buy Store', 'Smart Shop'
-    ];
-    
-    List<Customer> sampleCustomers = [];
-    for (int i = 0; i < 15; i++) {
-      sampleCustomers.add(
-        Customer(
-          id: 'CUST${String.fromCharCode(65 + (i ~/ 10))}${(i % 10).toString().padLeft(3, '0')}',
-          shopName: shopNames[i % shopNames.length],
-          phone: '077${(2000000 + i).toString()}',
-          area: areas[i % areas.length],
-        ),
-      );
-    }
-    return sampleCustomers;
-  }
-
-  List<String> get _areas {
-    final areas = _customers.map((c) => c.area).toSet().toList();
+  List<String> _getAreas(List<Customer> customers) {
+    final areas = customers.map((c) => c.area).toSet().toList();
     areas.sort();
     return ['All', ...areas];
   }
 
-  List<Customer> get _filteredCustomers {
-    return _customers.where((customer) {
+  List<Customer> _getFilteredCustomers(List<Customer> customers) {
+    return customers.where((customer) {
       bool matchesSearch = _searchController.text.isEmpty ||
           customer.shopName.toLowerCase().contains(_searchController.text.toLowerCase()) ||
           customer.phone.contains(_searchController.text) ||
@@ -64,9 +35,10 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
     }).toList();
   }
 
-  Map<String, List<Customer>> get _customersByArea {
+  Map<String, List<Customer>> _getCustomersByArea(List<Customer> customers) {
     final Map<String, List<Customer>> grouped = {};
-    for (final customer in _filteredCustomers) {
+    final filtered = _getFilteredCustomers(customers);
+    for (final customer in filtered) {
       if (!grouped.containsKey(customer.area)) {
         grouped[customer.area] = [];
       }
@@ -77,9 +49,15 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Consumer<FirebaseCustomerProvider>(
+      builder: (context, customerProvider, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final customers = customerProvider.customers;
+        final filteredCustomers = _getFilteredCustomers(customers);
+        final areas = _getAreas(customers);
+        final customersByArea = _getCustomersByArea(customers);
     
-    return Scaffold(
+        return Scaffold(
       appBar: AppBar(
         title: Text(
           'Customer Management',
@@ -102,11 +80,11 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: isDark
-                      ? [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.05)]
-                      : [Colors.white.withOpacity(0.7), Colors.white.withOpacity(0.3)],
+                      ? [Colors.white.withValues(alpha: 0.1), Colors.white.withValues(alpha: 0.05)]
+                      : [Colors.white.withValues(alpha: 0.7), Colors.white.withValues(alpha: 0.3)],
                 ),
                 border: Border.all(
-                  color: isDark ? Colors.white.withOpacity(0.2) : Colors.white.withOpacity(0.2),
+                  color: isDark ? Colors.white.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.2),
                   width: 1.5,
                 ),
               ),
@@ -116,7 +94,7 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
                 decoration: InputDecoration(
                   hintText: 'Search customers...',
                   prefixIcon: Icon(Icons.search, 
-                    color: Theme.of(context).primaryColor.withOpacity(0.7)),
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.7)),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 ),
@@ -130,9 +108,9 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _areas.length,
+                itemCount: areas.length,
                 itemBuilder: (context, index) {
-                  final area = _areas[index];
+                  final area = areas[index];
                   final isSelected = _selectedArea == area;
                   
                   return Container(
@@ -146,7 +124,7 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
                         });
                       },
                       backgroundColor: Colors.transparent,
-                      selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                      selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
                       checkmarkColor: Theme.of(context).primaryColor,
                       labelStyle: TextStyle(
                         color: isSelected 
@@ -168,7 +146,7 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
 
             // Customer List
             Expanded(
-              child: _buildCustomerList(),
+              child: _buildCustomerList(filteredCustomers, customersByArea),
             ),
           ],
         ),
@@ -181,10 +159,12 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
         label: const Text('Add Customer'),
       ),
     );
+      }
+    );
   }
 
-  Widget _buildCustomerList() {
-    if (_filteredCustomers.isEmpty) {
+  Widget _buildCustomerList(List<Customer> filteredCustomers, Map<String, List<Customer>> customersByArea) {
+    if (filteredCustomers.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -192,14 +172,14 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
             Icon(
               Icons.people_outline,
               size: 64,
-              color: Theme.of(context).primaryColor.withOpacity(0.5),
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             Text(
               'No customers found',
               style: TextStyle(
                 fontSize: 18,
-                color: Theme.of(context).primaryColor.withOpacity(0.7),
+                color: Theme.of(context).primaryColor.withValues(alpha: 0.7),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -209,14 +189,14 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
     }
 
     if (_selectedArea == 'All') {
-      return _buildAreaWiseList();
+      return _buildAreaWiseList(customersByArea);
     } else {
-      return _buildSingleAreaList();
+      return _buildSingleAreaList(filteredCustomers);
     }
   }
 
-  Widget _buildAreaWiseList() {
-    final groupedCustomers = _customersByArea;
+  Widget _buildAreaWiseList(Map<String, List<Customer>> customersByArea) {
+    final groupedCustomers = customersByArea;
     
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -239,13 +219,13 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                     colors: [
-                      Theme.of(context).primaryColor.withOpacity(0.1),
-                      Theme.of(context).primaryColor.withOpacity(0.05),
+                      Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                      Theme.of(context).primaryColor.withValues(alpha: 0.05),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Theme.of(context).primaryColor.withOpacity(0.3),
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
                     width: 1.5,
                   ),
                 ),
@@ -269,7 +249,7 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor.withOpacity(0.2),
+                        color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -286,7 +266,7 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
               ),
               
               // Customers in this area
-              ...customers.map((customer) => _buildCustomerCard(customer)).toList(),
+              ...customers.map((customer) => _buildCustomerCard(customer)),
             ],
           ),
         );
@@ -294,12 +274,12 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
     );
   }
 
-  Widget _buildSingleAreaList() {
+  Widget _buildSingleAreaList(List<Customer> filteredCustomers) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _filteredCustomers.length,
+      itemCount: filteredCustomers.length,
       itemBuilder: (context, index) {
-        return _buildCustomerCard(_filteredCustomers[index]);
+        return _buildCustomerCard(filteredCustomers[index]);
       },
     );
   }
@@ -315,16 +295,16 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.05)]
-              : [Colors.white.withOpacity(0.9), Colors.white.withOpacity(0.6)],
+              ? [Colors.white.withValues(alpha: 0.1), Colors.white.withValues(alpha: 0.05)]
+              : [Colors.white.withValues(alpha: 0.9), Colors.white.withValues(alpha: 0.6)],
         ),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.2) : Colors.white.withOpacity(0.3),
+          color: isDark ? Colors.white.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.3),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).shadowColor.withOpacity(0.1),
+            color: Theme.of(context).shadowColor.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -564,41 +544,52 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
     return true;
   }
 
-  void _saveCustomer({
+  Future<void> _saveCustomer({
     Customer? customer,
     required String shopName,
     required String phone,
     required String area,
-  }) {
-    if (customer != null) {
-      // Edit existing customer
-      final index = _customers.indexWhere((c) => c.id == customer.id);
-      if (index != -1) {
-        _customers[index] = customer.copyWith(
+  }) async {
+    final customerProvider = Provider.of<FirebaseCustomerProvider>(context, listen: false);
+    
+    try {
+      if (customer != null) {
+        // Edit existing customer
+        final updatedCustomer = customer.copyWith(
           shopName: shopName,
           phone: phone,
           area: area,
         );
+        await customerProvider.updateCustomer(updatedCustomer);
+      } else {
+        // Add new customer
+        final newCustomer = Customer(
+          id: '', // Firebase will generate the ID
+          shopName: shopName,
+          phone: phone,
+          area: area,
+        );
+        await customerProvider.addCustomer(newCustomer);
       }
-    } else {
-      // Add new customer
-      final newCustomer = Customer(
-        id: 'CUST${DateTime.now().millisecondsSinceEpoch}',
-        shopName: shopName,
-        phone: phone,
-        area: area,
-      );
-      _customers.add(newCustomer);
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(customer != null ? 'Customer updated successfully' : 'Customer added successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to ${customer != null ? 'update' : 'add'} customer: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
-    
-    setState(() {});
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(customer != null ? 'Customer updated successfully' : 'Customer added successfully'),
-        backgroundColor: Colors.green,
-      ),
-    );
   }
 
   void _deleteCustomer(Customer customer) {
@@ -613,16 +604,30 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              _customers.removeWhere((c) => c.id == customer.id);
-              setState(() {});
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Customer deleted successfully'),
-                  backgroundColor: Colors.red,
-                ),
-              );
+            onPressed: () async {
+              final customerProvider = Provider.of<FirebaseCustomerProvider>(context, listen: false);
+              try {
+                await customerProvider.deleteCustomer(customer.id);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Customer deleted successfully'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to delete customer: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),

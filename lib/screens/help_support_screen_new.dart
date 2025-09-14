@@ -19,7 +19,7 @@ class HelpSupportScreen extends StatelessWidget {
         foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         iconTheme: Theme.of(context).appBarTheme.iconTheme,
         elevation: 8,
-        shadowColor: Theme.of(context).primaryColor.withOpacity(0.3),
+        shadowColor: Theme.of(context).primaryColor.withValues(alpha: 0.3),
       ),
       body: SafeArea(
         child: Container(
@@ -29,7 +29,7 @@ class HelpSupportScreen extends StatelessWidget {
               end: Alignment.bottomRight,
               colors: [
                 Theme.of(context).scaffoldBackgroundColor,
-                Theme.of(context).scaffoldBackgroundColor.withOpacity(0.8),
+                Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.8),
               ],
             ),
           ),
@@ -55,7 +55,7 @@ class HelpSupportScreen extends StatelessWidget {
                         '3. Add customer details if needed\n'
                         '4. Apply discounts if applicable\n'
                         '5. Print or save the bill\n\n'
-                        'Use the sliding menu to access different features like stock management, customer management, and reports.'
+                        'Use the sliding menu to access different features like stock management and customer management.'
                       ),
                     ),
                     const Divider(height: 1),
@@ -105,7 +105,7 @@ class HelpSupportScreen extends StatelessWidget {
                         '• View customer purchase history\n'
                         '• Filter customers by type (Regular, Premium, VIP)\n'
                         '• Search customers by name, phone, or email\n'
-                        '• Track customer analytics and spending\n\n'
+                        '• Track customer purchase history and preferences\n\n'
                         'Having customer data helps in building relationships and marketing.'
                       ),
                     ),
@@ -255,7 +255,7 @@ class HelpSupportScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withOpacity(0.1),
+                          color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -308,7 +308,7 @@ class HelpSupportScreen extends StatelessWidget {
   }) {
     return Card(
       elevation: 4,
-      shadowColor: Theme.of(context).primaryColor.withOpacity(0.1),
+      shadowColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
@@ -322,7 +322,7 @@ class HelpSupportScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(

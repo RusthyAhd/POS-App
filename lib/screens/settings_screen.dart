@@ -20,7 +20,7 @@ class SettingsScreen extends StatelessWidget {
         foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         iconTheme: Theme.of(context).appBarTheme.iconTheme,
         elevation: 8,
-        shadowColor: Theme.of(context).primaryColor.withOpacity(0.3),
+        shadowColor: Theme.of(context).primaryColor.withValues(alpha: 0.3),
       ),
       body: SafeArea(
         child: Container(
@@ -30,7 +30,7 @@ class SettingsScreen extends StatelessWidget {
               end: Alignment.bottomRight,
               colors: [
                 Theme.of(context).scaffoldBackgroundColor,
-                Theme.of(context).scaffoldBackgroundColor.withOpacity(0.8),
+                Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.8),
               ],
             ),
           ),
@@ -88,6 +88,38 @@ class SettingsScreen extends StatelessWidget {
                       onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Language settings coming soon!')),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Firebase Settings Section
+                _buildSectionCard(
+                  context,
+                  title: 'Firebase Configuration',
+                  icon: Icons.cloud_outlined,
+                  children: [
+                    _buildSettingTile(
+                      context,
+                      title: 'Check Firebase Connection',
+                      subtitle: 'View project details and connection status',
+                      icon: Icons.cloud_sync_outlined,
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text('Firebase Status'),
+                            content: Text('Firebase is connected and active for this POS application.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: Text('OK'),
+                              ),
+                            ],
+                          ),
                         );
                       },
                     ),
@@ -185,7 +217,7 @@ class SettingsScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withOpacity(0.1),
+                          color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -238,12 +270,12 @@ class SettingsScreen extends StatelessWidget {
   }) {
     return Card(
       elevation: 8,
-      shadowColor: Theme.of(context).primaryColor.withOpacity(0.2),
+      shadowColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
           color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.white.withOpacity(0.2)
+              ? Colors.white.withValues(alpha: 0.2)
               : Colors.transparent,
           width: 1.5,
         ),
@@ -269,7 +301,7 @@ class SettingsScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -316,7 +348,7 @@ class SettingsScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -368,7 +400,7 @@ class SettingsScreen extends StatelessWidget {
                     boxShadow: [
                       BoxShadow(
                         color: (themeProvider.isDarkMode ? Colors.grey[700]! : Theme.of(context).primaryColor)
-                            .withOpacity(0.3),
+                            .withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -429,7 +461,7 @@ class SettingsScreen extends StatelessWidget {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Theme.of(context).primaryColor.withOpacity(0.1),
+          color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(

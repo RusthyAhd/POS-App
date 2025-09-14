@@ -16,7 +16,7 @@ class SpaceLiquidScaffold extends StatefulWidget {
   final Color? glassColor;
 
   const SpaceLiquidScaffold({
-    Key? key,
+    super.key,
     this.appBar,
     this.body,
     this.drawer,
@@ -24,7 +24,7 @@ class SpaceLiquidScaffold extends StatefulWidget {
     this.floatingActionButtonLocation,
     this.bottomNavigationBar,
     this.glassColor,
-  }) : super(key: key);
+  });
 
   @override
   State<SpaceLiquidScaffold> createState() => _SpaceLiquidScaffoldState();
@@ -67,8 +67,8 @@ class _SpaceLiquidScaffoldState extends State<SpaceLiquidScaffold>
   Widget build(BuildContext context) {
     final glass = widget.glassColor ??
         (Theme.of(context).brightness == Brightness.dark
-            ? Colors.white.withOpacity(0.06)
-            : Colors.white.withOpacity(0.26));
+            ? Colors.white.withValues(alpha: 0.06)
+            : Colors.white.withValues(alpha: 0.26));
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -99,9 +99,9 @@ class _SpaceLiquidScaffoldState extends State<SpaceLiquidScaffold>
                       center: Alignment(-0.2 + t * 0.4, -0.3 + t * 0.3),
                       radius: 1.4,
                       colors: [
-                        Colors.deepPurple.withOpacity(0.18 + t * 0.08),
-                        Colors.indigo.withOpacity(0.12 + (1 - t) * 0.06),
-                        Colors.blue.withOpacity(0.06),
+                        Colors.deepPurple.withValues(alpha: 0.18 + t * 0.08),
+                        Colors.indigo.withValues(alpha: 0.12 + (1 - t) * 0.06),
+                        Colors.blue.withValues(alpha: 0.06),
                       ],
                       stops: const [0.0, 0.6, 1.0],
                     ),
@@ -148,12 +148,12 @@ class _SpaceLiquidScaffoldState extends State<SpaceLiquidScaffold>
                         color: glass,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.06),
+                          color: Colors.white.withValues(alpha: 0.06),
                           width: 1,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.35),
+                            color: Colors.black.withValues(alpha: 0.35),
                             blurRadius: 24,
                             offset: const Offset(0, 8),
                           )
@@ -185,7 +185,7 @@ class _StarsPainter extends CustomPainter {
       final cy = rnd.nextDouble() * size.height;
       final w = (rnd.nextDouble() * 2.6) + (rnd.nextDouble() * 1.8);
       final opacity = 0.2 + rnd.nextDouble() * 0.8;
-      paint.color = Colors.white.withOpacity(opacity * 0.7);
+      paint.color = Colors.white.withValues(alpha: opacity * 0.7);
       canvas.drawCircle(Offset(cx + math.sin(rotation + i) * 2, cy + math.cos(rotation + i) * 2), w * 0.5, paint);
     }
   }
@@ -200,24 +200,23 @@ class _BlobsPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final c = size.center(Offset.zero);
     final paint = Paint()..style = PaintingStyle.fill;
 
     // Soft purple blob
     paint.shader = RadialGradient(
-      colors: [Colors.purple.withOpacity(0.24), Colors.transparent],
+      colors: [Colors.purple.withValues(alpha: 0.24), Colors.transparent],
     ).createShader(Rect.fromCircle(center: Offset(size.width * 0.2 + math.sin(t * 2.0) * 30, size.height * 0.25 + math.cos(t * 1.3) * 20), radius: 220));
     canvas.drawCircle(Offset(size.width * 0.2 + math.sin(t * 2.0) * 30, size.height * 0.25 + math.cos(t * 1.3) * 20), 220, paint);
 
     // Soft blue blob
     paint.shader = RadialGradient(
-      colors: [Colors.blue.withOpacity(0.14), Colors.transparent],
+      colors: [Colors.blue.withValues(alpha: 0.14), Colors.transparent],
     ).createShader(Rect.fromCircle(center: Offset(size.width * 0.8 + math.cos(t * 1.6) * 40, size.height * 0.7 + math.sin(t * 1.1) * 30), radius: 260));
     canvas.drawCircle(Offset(size.width * 0.8 + math.cos(t * 1.6) * 40, size.height * 0.7 + math.sin(t * 1.1) * 30), 260, paint);
 
     // Soft cyan accent
     paint.shader = RadialGradient(
-      colors: [Colors.cyan.withOpacity(0.08), Colors.transparent],
+      colors: [Colors.cyan.withValues(alpha: 0.08), Colors.transparent],
     ).createShader(Rect.fromCircle(center: Offset(size.width * 0.5 + math.sin(t * 1.2) * 20, size.height * 0.5 + math.cos(t * 0.9) * 20), radius: 180));
     canvas.drawCircle(Offset(size.width * 0.5 + math.sin(t * 1.2) * 20, size.height * 0.5 + math.cos(t * 0.9) * 20), 180, paint);
   }

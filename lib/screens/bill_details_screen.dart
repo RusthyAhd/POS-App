@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/billing_item.dart';
+import '../models/bill.dart';
 import '../models/customer.dart';
+import '../providers/firebase_bill_provider.dart';
+import '../providers/firebase_product_provider.dart';
+import '../providers/firebase_customer_provider.dart';
 import '../utils/theme_helpers.dart';
 
 class BillDetailsScreen extends StatefulWidget {
@@ -302,9 +307,9 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(0.1),
+                        color: Colors.grey.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -370,13 +375,13 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  Theme.of(context).primaryColor.withOpacity(0.1),
-                                  Theme.of(context).primaryColor.withOpacity(0.05),
+                                  Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                                  Theme.of(context).primaryColor.withValues(alpha: 0.05),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: Theme.of(context).primaryColor.withOpacity(0.3),
+                                color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
                               ),
                             ),
                             child: Column(
@@ -411,9 +416,9 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
+                          color: Colors.green.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.green.withOpacity(0.3)),
+                          border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           children: [
@@ -746,14 +751,20 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
             ),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(dialogContext);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Bill sent to thermal printer!'),
-                  backgroundColor: Colors.green,
-                ),
-              );
+              // Save bill to Firebase after printing
+              await _saveBillToHistory();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Bill printed and saved to history!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+                // Clear current bill and go back to home
+                Navigator.pop(context, true);
+              }
             },
             child: Text(
               'Print',
@@ -772,6 +783,20 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
       
       // Try different WhatsApp sharing methods
       await _shareToWhatsApp(billText, context);
+      
+      // Save bill to Firebase after sharing
+      await _saveBillToHistory();
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Bill shared and saved to history!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Clear current bill and go back to home
+        Navigator.pop(context, true);
+      }
       
     } catch (e) {
       if (context.mounted) {
@@ -899,14 +924,67 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
     return buffer.toString();
   }
 
-  void _saveBill() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Bill saved successfully!'),
-        backgroundColor: Colors.green,
-      ),
-    );
-    Navigator.pop(context);
+  Future<void> _saveBillToHistory() async {
+    try {
+      final billProvider = Provider.of<FirebaseBillProvider>(context, listen: false);
+      final productProvider = Provider.of<FirebaseProductProvider>(context, listen: false);
+      
+      // First, reduce stock for all products in the bill
+      await productProvider.reduceStockForBillingItems(widget.billingItems);
+      
+      // Create bill object
+      final bill = Bill(
+        billNumber: widget.billNumber,
+        customerName: selectedCustomer?.name ?? 'Walk-in Customer',
+        customerPhone: selectedCustomer?.phone ?? '',
+        items: widget.billingItems,
+        subtotal: subtotalAmount,
+        discount: discountAmount,
+        tax: 0.0, // You can add tax calculation if needed
+        totalAmount: finalAmount,
+        paymentMethod: 'Cash', // You can add payment method selection
+        timestamp: DateTime.now(),
+      );
+      
+      // Save bill to Firestore
+      await billProvider.addBill(bill);
+      
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving bill: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      rethrow; // Re-throw to prevent further processing if stock reduction fails
+    }
+  }
+
+  void _saveBill() async {
+    try {
+      await _saveBillToHistory();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Bill saved to cloud successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context, true); // Return true to indicate success
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving bill: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -975,53 +1053,37 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog>
     _searchController.addListener(_filterCustomers);
   }
 
-  void _loadCustomers() {
-    // Simulate loading customers from database
-    Future.delayed(const Duration(milliseconds: 500), () {
+  void _loadCustomers() async {
+    try {
+      final customerProvider = Provider.of<FirebaseCustomerProvider>(context, listen: false);
+      await customerProvider.loadCustomers();
+      
       if (mounted) {
         setState(() {
-          _customers = _generateSampleCustomers();
+          _customers = customerProvider.customers;
           _filteredCustomers = _customers;
           _isLoading = false;
         });
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _customers = [];
+          _filteredCustomers = [];
+          _isLoading = false;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading customers: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
-  List<Customer> _generateSampleCustomers() {
-    return [
-      Customer(
-        id: 'CUST001',
-        shopName: 'Smith Mart',
-        phone: '+94 771234567',
-        area: 'Colombo 01',
-      ),
-      Customer(
-        id: 'CUST002',
-        shopName: 'Johnson Store',
-        phone: '+94 777654321',
-        area: 'Kandy',
-      ),
-      Customer(
-        id: 'CUST003',
-        shopName: 'Brown Supermarket',
-        phone: '+94 761111222',
-        area: 'Galle',
-      ),
-      Customer(
-        id: 'CUST004',
-        shopName: 'Davis Mini Market',
-        phone: '+94 773333444',
-        area: 'Negombo',
-      ),
-      Customer(
-        id: 'CUST005',
-        shopName: 'Wilson Grocery',
-        phone: '+94 765555666',
-        area: 'Jaffna',
-      ),
-    ];
-  }
+
 
   void _filterCustomers() {
     final query = _searchController.text.toLowerCase();
@@ -1059,7 +1121,7 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog>
                     end: Alignment.bottomRight,
                     colors: [
                       Theme.of(context).cardColor,
-                      Theme.of(context).cardColor.withOpacity(0.8),
+                      Theme.of(context).cardColor.withValues(alpha: 0.8),
                     ],
                   ),
                 ),
@@ -1279,7 +1341,7 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog>
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
               colors: [
-                Theme.of(context).primaryColor.withOpacity(0.1),
+                Theme.of(context).primaryColor.withValues(alpha: 0.1),
                 Colors.transparent,
               ],
             ),
