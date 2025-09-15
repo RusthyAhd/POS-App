@@ -1520,6 +1520,7 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog>
                           shopName: _nameController.text,
                           phone: _phoneController.text,
                           area: _emailController.text,
+                          limit: 0.0,
                         );
                         widget.onCustomerSelected(customer);
                         Navigator.pop(context);

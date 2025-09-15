@@ -357,7 +357,38 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
                     ],
                   ),
                   const SizedBox(height: 2),
-
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_city,
+                        size: 14,
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        customer.area,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.account_balance_wallet,
+                        size: 14,
+                        color: Colors.green,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Limit: LKR ${customer.limit.toStringAsFixed(2)}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.green,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -408,6 +439,7 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
     final shopNameController = TextEditingController(text: customer?.shopName ?? '');
     final phoneController = TextEditingController(text: customer?.phone ?? '');
     final areaController = TextEditingController(text: customer?.area ?? '');
+    final limitController = TextEditingController(text: customer?.limit.toString() ?? '0.0');
 
     showDialog(
       context: context,
@@ -463,6 +495,15 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
                   icon: Icons.location_city,
                   required: true,
                 ),
+                const SizedBox(height: 16),
+                
+                _buildTextField(
+                  controller: limitController,
+                  label: 'Credit Limit (LKR)',
+                  icon: Icons.account_balance_wallet,
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  required: true,
+                ),
                 const SizedBox(height: 32),
                 
                 Row(
@@ -477,12 +518,13 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          if (_validateForm([shopNameController, phoneController, areaController])) {
+                          if (_validateForm([shopNameController, phoneController, areaController, limitController])) {
                             _saveCustomer(
                               customer: customer,
                               shopName: shopNameController.text,
                               phone: phoneController.text,
                               area: areaController.text,
+                              limit: double.tryParse(limitController.text) ?? 0.0,
                             );
                             Navigator.pop(context);
                           }
@@ -549,6 +591,7 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
     required String shopName,
     required String phone,
     required String area,
+    required double limit,
   }) async {
     final customerProvider = Provider.of<FirebaseCustomerProvider>(context, listen: false);
     
@@ -559,6 +602,7 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
           shopName: shopName,
           phone: phone,
           area: area,
+          limit: limit,
         );
         await customerProvider.updateCustomer(updatedCustomer);
       } else {
@@ -568,6 +612,7 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
           shopName: shopName,
           phone: phone,
           area: area,
+          limit: limit,
         );
         await customerProvider.addCustomer(newCustomer);
       }

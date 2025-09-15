@@ -3,6 +3,7 @@ class Customer {
   final String shopName;
   final String phone;
   final String area;
+  final double limit;
   final DateTime dateAdded;
 
   Customer({
@@ -10,6 +11,7 @@ class Customer {
     required this.shopName,
     required this.phone,
     required this.area,
+    required this.limit,
     DateTime? dateAdded,
   }) : dateAdded = dateAdded ?? DateTime.now();
 
@@ -22,6 +24,7 @@ class Customer {
       shopName: json['shopName'],
       phone: json['phone'],
       area: json['area'],
+      limit: (json['limit'] ?? 0.0).toDouble(),
       dateAdded: json['dateAdded'] != null 
           ? DateTime.parse(json['dateAdded']) 
           : DateTime.now(),
@@ -34,6 +37,7 @@ class Customer {
       'shopName': shopName,
       'phone': phone,
       'area': area,
+      'limit': limit,
       'dateAdded': dateAdded.toIso8601String(),
     };
   }
@@ -42,12 +46,14 @@ class Customer {
     String? shopName,
     String? phone,
     String? area,
+    double? limit,
   }) {
     return Customer(
       id: id,
       shopName: shopName ?? this.shopName,
       phone: phone ?? this.phone,
       area: area ?? this.area,
+      limit: limit ?? this.limit,
       dateAdded: dateAdded,
     );
   }
@@ -59,6 +65,7 @@ class Customer {
       shopName: data['shopName'] ?? '',
       phone: data['phone'] ?? '',
       area: data['area'] ?? '',
+      limit: (data['limit'] ?? 0.0).toDouble(),
       dateAdded: data['dateAdded'] != null 
           ? DateTime.fromMillisecondsSinceEpoch(data['dateAdded'])
           : DateTime.now(),
@@ -70,6 +77,7 @@ class Customer {
       'shopName': shopName,
       'phone': phone,
       'area': area,
+      'limit': limit,
       'dateAdded': dateAdded.millisecondsSinceEpoch,
     };
   }

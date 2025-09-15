@@ -23,6 +23,7 @@ class Bill {
           shopName: customerName,
           phone: customerPhone,
           area: '',
+          limit: 0.0,
         ) 
       : null;
   double get total => totalAmount;

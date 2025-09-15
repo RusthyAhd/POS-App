@@ -1,0 +1,45 @@
+name: Deploy to Firebase Hosting
+
+# Trigger deployment on push to main branch
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Checkout the code
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    # Setup Flutter
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.3'
+        channel: 'stable'
+        cache: true
+
+    # Enable Flutter web
+    - name: Enable Flutter Web
+      run: flutter config --enable-web
+
+    # Get Flutter dependencies
+    - name: Get Flutter Dependencies
+      run: flutter pub get
+
+    # Build Flutter web app
+    - name: Build Flutter Web App
+      run: flutter build web --release
+
+    # Deploy to Firebase Hosting (Live Channel)
+    - name: Deploy to Firebase Hosting
+      uses: FirebaseExtended/action-hosting-deploy@v0
+      with:
+        repoToken: '${{ secrets.GITHUB_TOKEN }}'
+        firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_PEGAS_POS }}'
+        projectId: pegas-pos
+        channelId: live
