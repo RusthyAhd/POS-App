@@ -8,6 +8,9 @@ import '../providers/firebase_bill_provider.dart';
 import '../providers/firebase_product_provider.dart';
 import '../providers/firebase_customer_provider.dart';
 import '../utils/theme_helpers.dart';
+import '../services/bluetooth_service.dart';
+import '../services/thermal_printer_service.dart';
+import 'bluetooth_printer_screen.dart';
 
 class BillDetailsScreen extends StatefulWidget {
   final List<BillingItem> billingItems;
@@ -705,36 +708,104 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
   }
 
   void _connectThermalPrinter(BuildContext context) {
+    if (!BluetoothService.isConnected) {
+      showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(
+            'No Printer Connected',
+            style: TextStyle(color: ThemeHelpers.getHeadingColor(dialogContext)),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.bluetooth_disabled, 
+                size: 48,
+                color: Colors.red,
+              ),
+              SizedBox(height: 16),
+              Text(
+                'No Bluetooth printer connected.',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Please connect a thermal printer first.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const BluetoothPrinterScreen(),
+                  ),
+                );
+              },
+              child: Text(
+                'Connect Printer',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // Show print confirmation and execute
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(
-          'Thermal Printer',
+          'Print Bill',
           style: TextStyle(color: ThemeHelpers.getHeadingColor(dialogContext)),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.bluetooth_rounded, 
+              Icons.bluetooth_connected, 
               size: 48,
-              color: Theme.of(dialogContext).primaryColor,
+              color: Colors.green,
             ),
             SizedBox(height: 16),
             Text(
-              'Connecting to thermal printer...',
+              'Connected to ${BluetoothService.connectedDevice?.name ?? "Printer"}',
               style: TextStyle(
                 color: Colors.black,
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
             ),
-            SizedBox(height: 16),
+            SizedBox(height: 8),
             Text(
-              'Make sure your thermal printer is turned on and paired.',
+              'Print this bill to thermal printer?',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.black,
+                color: Colors.grey[600],
               ),
             ),
           ],
@@ -751,21 +822,7 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
             ),
           ),
           ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(dialogContext);
-              // Save bill to Firebase after printing
-              await _saveBillToHistory();
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Bill printed and saved to history!'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-                // Clear current bill and go back to home
-                Navigator.pop(context, true);
-              }
-            },
+            onPressed: () => _executeThermalPrint(dialogContext),
             child: Text(
               'Print',
               style: TextStyle(color: Colors.white),
@@ -774,6 +831,77 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _executeThermalPrint(BuildContext dialogContext) async {
+    Navigator.pop(dialogContext);
+    
+    // Show printing progress
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Printing bill...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      // Create bill data for printing
+      final bill = Bill(
+        id: widget.billNumber,
+        billNumber: widget.billNumber,
+        customerName: selectedCustomer?.name ?? 'Walk-in Customer',
+        customerPhone: selectedCustomer?.phone ?? '',
+        items: widget.billingItems,
+        subtotal: subtotalAmount,
+        discount: discountAmount,
+        totalAmount: finalAmount,
+        timestamp: DateTime.now(),
+      );
+
+      final success = await ThermalPrinterService.printBill(bill);
+      
+      if (context.mounted) {
+        Navigator.pop(context); // Close progress dialog
+        
+        if (success) {
+          // Save bill to Firebase after successful printing
+          await _saveBillToHistory();
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Bill printed and saved to history!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // Clear current bill and go back to home
+          Navigator.pop(context, true);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to print bill. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context); // Close progress dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Print error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _shareBill(BuildContext context) async {

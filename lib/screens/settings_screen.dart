@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
+import 'bluetooth_printer_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -88,6 +89,21 @@ class SettingsScreen extends StatelessWidget {
                       onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Language settings coming soon!')),
+                        );
+                      },
+                    ),
+                    const Divider(height: 1),
+                    _buildSettingTile(
+                      context,
+                      title: 'Bluetooth Printer',
+                      subtitle: 'Manage thermal printer connection',
+                      icon: Icons.bluetooth,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const BluetoothPrinterScreen(),
+                          ),
                         );
                       },
                     ),

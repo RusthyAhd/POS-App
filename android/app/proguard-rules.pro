@@ -33,3 +33,25 @@
 
 ## Models
 -keep class com.example.pos_app.** { *; }
+
+# Bluetooth Serial
+-keep class io.github.edufolly.** { *; }
+-keep class android.bluetooth.** { *; }
+-dontwarn android.bluetooth.**
+
+# ESC POS Utils
+-keep class com.dantsu.escposprinter.** { *; }
+-dontwarn com.dantsu.escposprinter.**
+
+# Permission Handler
+-keep class com.baseflow.permissionhandler.** { *; }
+-dontwarn com.baseflow.permissionhandler.**
+
+# URL Launcher
+-keep class io.flutter.plugins.urllauncher.** { *; }
+-dontwarn io.flutter.plugins.urllauncher.**
+
+# General optimizations for faster builds
+-optimizationpasses 3
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
